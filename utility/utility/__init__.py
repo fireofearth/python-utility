@@ -1,7 +1,25 @@
+import os
 from pathlib import Path
 import itertools
 import functools
 import numpy as np
+
+def hello_world():
+    """Test that package installation works"""
+    return "Hello World"
+
+def get_dirname_of(fn):
+    """Get absolute path of the immediate directory the file is in
+    Parameters
+    ----------
+    fn : str
+        The path i.e. /path/to/image.png
+    Returns
+    -------
+    str
+        The dirname i.e /path/to
+    """
+    return os.path.dirname(os.path.abspath(filepath))
 
 def save_json(filepath, obj):
     """Serialize object as a JSON formatted stream and save to a file.
@@ -79,7 +97,7 @@ def create_sample_pattern(sample_pattern):
     """
     if sample_pattern == '':
         return { }
-    else if isinstance(sample_pattern, str):
+    elif isinstance(sample_pattern, str):
         sample_pattern = sample_pattern.split('/')
         return {k: i for i,k in enumerate(sample_pattern)}
     else:
