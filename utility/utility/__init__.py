@@ -1,4 +1,5 @@
 import os
+import json
 from pathlib import Path
 import itertools
 import functools
@@ -155,7 +156,7 @@ def create_sample_ids(paths, sample_pattern=None, rootpath=None):
         Sample ID generated from path.
     """
     ids = [None]*len(paths)
-    for idx, path in paths:
+    for idx, path in enumerate(paths):
         ids[idx] = create_sample_id(path,
                 sample_pattern=sample_pattern,
                 rootpath=rootpath)
@@ -189,29 +190,27 @@ def group_ids(ids, words, sample_pattern):
     Stroma/MMRd/VOA-1000A/512/20/0_0
     Stroma/MMRd/VOA-1000A/512/10/0_0
     Stroma/MMRd/VOA-1000A/512/20/2_2
-    Stroma/MMRd/VOA-1000A/256/20/0_0
     Stroma/MMRd/VOA-1000A/256/10/0_0
     Tumor/POLE/VOA-1000B/256/10/0_0
 
     Setting words=['patch_size', 'magnification'] gives
 
     512: {
-        20: {
+        20: [
             Stroma/MMRd/VOA-1000A/512/20/0_0
             Stroma/MMRd/VOA-1000A/512/20/2_2
-        },
-        10: {
+        ],
+        10: [
             Stroma/MMRd/VOA-1000A/512/10/0_0
-        }
+        ]
     },
     256: {
-        20: {
-            Stroma/MMRd/VOA-1000A/256/20/0_0
-        },
-        10: {
+        20: [
+        ],
+        10: [
             Stroma/MMRd/VOA-1000A/256/10/0_0
             Tumor/POLE/VOA-1000B/256/10/0_0
-        }
+        ]
     }
 
     Parameters
@@ -228,15 +227,15 @@ def group_ids(ids, words, sample_pattern):
     Returns
     -------
     dict
-        The grouped IDs
-    dict of str: np.array
+        The grouped IDs.
+        Each group is a list.
+    dict of str: list
         Labels corresponding to each word in words array
     """
-    id_nd = np.char.asarray([[*id.split('/'), id] for id in ids])
+    id_nd = np.array([[*id.split('/'), id] for id in ids], dtype=np.dtype('U'))
     word_to_labels = { }
     for word in words:
-        word_to_labels[word] = np.unique(id_nd[:, sample_pattern[word]])
-    id_groups = { }
+        word_to_labels[word] = np.unique(id_nd[:, sample_pattern[word]]).tolist()
     def traverse_words(part_id_nd, idx=0):
         if idx >= len(words):
             return part_id_nd[:, -1].tolist()
@@ -312,10 +311,8 @@ def index_ids(ids, sample_pattern, include=[], exclude=[]):
     -------
     dict of str: list
         The patch IDs grouped by words.
-    
-    TODO: need to convert to using np.char.asarray()
     """
-    id_nd = np.array([[*id.split('/'), id] for id in ids])
+    id_nd = np.array([[*id.split('/'), id] for id in ids], dtype=np.dtype('U'))
     words = set(sample_pattern) - set(exclude)
     if include:
         words = words & set(include)
