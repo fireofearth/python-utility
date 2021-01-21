@@ -42,6 +42,8 @@ def filter_to_list(f, l):
     return list(filter(f, l))
 
 def compress_to_list(l, bl):
+    """Filter list using a list of selectors, returning a list.
+    Example: ([1,2,3,4,5], [True, False, False, True, False]) -> [1,4]"""
     return list(itertools.compress(l, bl))
 
 def reduce(f, l, i=None):
