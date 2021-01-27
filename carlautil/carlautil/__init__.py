@@ -6,59 +6,34 @@ import networkx as nx
 import os
 import carla
 
-class NumpyEncoder(json.JSONEncoder):
-    """The encoding object used to serialize np.ndarrays"""
-    def default(self, obj):
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        return json.JSONEncoder.default(self, obj)
+import utility as util
 
-def save_datum(datum, directory, filename):
-    """Save datum
+def make_client(host='127.0.0.1', port=2000):
+    """Create a client. Useful for debugging in the Python interpreter."""
+    return carla.Client(host, port)
+
+def debug_point(client, l, t=1.0,
+        c=carla.Color(r=255, g=0, b=0, a=100)):
+    """Draw a point in the simulator.
 
     Parameters
     ----------
-    datum : dict
-        The data to save
-    directory : str
-        The directory name to save the data.
-    filename : str
-        The filename to name the data
+    client : carla.Client or carla.World
+        Client.
+    l : carla.Transform or carla.Location
+        Position in map to place the point.
+    t : float
+        Life time of point.
+    c : carla.Color
+        Color of the point.
     """
-    assert(os.path.isdir(directory))
-    filename = filename if filename.endswith('.json') else f"{filename}.json"
-    with open(os.path.join(directory, filename), 'w') as f:
-            json.dump(datum, f, cls=NumpyEncoder)
-
-def merge_list_of_list(ll):
-    """Concatenate iterable of iterables into one list."""
-    return list(itertools.chain.from_iterable(ll))
-
-def map_to_list(f, l):
-    """Does map operation and then converts map object to a list."""
-    return list(map(f, l))
-
-def filter_to_list(f, l):
-    return list(filter(f, l))
-
-def compress_to_list(l, bl):
-    """Filter list using a list of selectors, returning a list.
-    Example: ([1,2,3,4,5], [True, False, False, True, False]) -> [1,4]"""
-    return list(itertools.compress(l, bl))
-
-def reduce(f, l, i=None):
-    """
-    Parameters
-    ----------
-    f : (function v, acc: f(v, acc))
-    l : iterable
-    i : any
-    """
-    return functools.reduce(f, l, i)
-
-def map_to_ndarray(f, l):
-    """Does map operation and then converts map object to a list."""
-    return np.array(map_to_list(f, l))
+    if isinstance(l, carla.Transform):
+        l = l.location
+    if isinstance(client, carla.Client):
+        world = client.get_world()
+    else:
+        world = client
+    world.debug.draw_string(l, 'o', color=c, life_time=t)
 
 def location_to_ndarray(l):
     """Converts carla.Location to ndarray [x, y, z]"""
@@ -74,7 +49,7 @@ def actor_to_location_ndarray(a):
 
 def actors_to_location_ndarray(alist):
     """Converts iterable of carla.Actor to a ndarray of size (len(iterable), 3)"""
-    return np.array(map_to_list(actor_to_location_ndarray, alist))
+    return np.array(util.map_to_list(actor_to_location_ndarray, alist))
 
 def transform_to_location_ndarray(t):
     """Converts carla.Transform to location ndarray [x, y, z]"""
@@ -82,7 +57,7 @@ def transform_to_location_ndarray(t):
 
 def transforms_to_location_ndarray(ts):
     """Converts an iterable of carla.Transform to a ndarray of size (len(iterable), 3)"""
-    return np.array(map_to_list(transform_to_location_ndarray, ts))
+    return np.array(util.map_to_list(transform_to_location_ndarray, ts))
 
 def transform_points(transform, points):
     """Given a 4x4 transformation matrix, transform an array of 3D points.

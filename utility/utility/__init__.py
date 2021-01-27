@@ -5,6 +5,9 @@ import itertools
 import functools
 import numpy as np
 
+class UtilityException(Exception):
+    pass
+
 def hello_world():
     """Test that package installation works"""
     return "Hello World"
@@ -20,7 +23,7 @@ def get_dirname_of(fn):
     str
         The dirname i.e /path/to
     """
-    return os.path.dirname(os.path.abspath(filepath))
+    return os.path.dirname(os.path.abspath(fn))
 
 def save_json(filepath, obj):
     """Serialize object as a JSON formatted stream and save to a file.
@@ -93,6 +96,10 @@ def strip_extension(path):
     """
     p = Path(path)
     return str(p.with_suffix(''))
+
+def map_to_ndarray(f, l):
+    """Does map operation and then converts map object to a list."""
+    return np.array(map_to_list(f, l))
 
 def create_sample_pattern(sample_pattern):
     """Given a string of '/' separated words, create a dict of the words and their ordering in the string. Idempotent.
@@ -339,3 +346,36 @@ def index_ids(ids, sample_pattern, include=[], exclude=[]):
             group[common_id] = []
         group[common_id].append(id)
     return group
+
+class NumpyEncoder(json.JSONEncoder):
+    """The encoding object used to serialize np.ndarrays"""
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
+def save_datum(datum, directory, filename):
+    """Save datum (dict with ndarray values as JSON file).
+
+    Parameters
+    ----------
+    datum : dict
+        The data to save
+    directory : str
+        The directory name to save the data.
+    filename : str
+        The file name to name the data.
+        If file name contains '/' separated words then create subfolders for them.
+        A filename will have the .json suffix added to them if necessary.
+    """
+    if not os.path.isdir(directory):
+        raise UtilityException(f"{directory} does not exist.")
+    if filename.startswith('/'):
+        raise UtilityException(f"filename {filename} cannot begin with a '/'.")
+    """Create subfolders if necessary"""
+    filepath = os.path.join(directory, filename)
+    os.makedirs(get_dirname_of(filepath), exist_ok=True)
+    """Save the file"""
+    filepath = filepath if filepath.endswith('.json') else f"{filepath}.json"
+    with open(filepath, 'w') as f:
+            json.dump(datum, f, cls=NumpyEncoder)
