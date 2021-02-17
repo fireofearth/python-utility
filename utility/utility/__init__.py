@@ -54,6 +54,8 @@ def map_to_list(f, l):
     return list(map(f, l))
 
 def filter_to_list(f, l):
+    """Filter from list elements that return true under f(), returning a list.
+    Example: (lambda x: x > 2, [1,2,3,4,5]) -> [3,4,5]"""
     return list(filter(f, l))
 
 def compress_to_list(l, bl):
@@ -248,8 +250,10 @@ def group_ids(ids, words, sample_pattern):
     dict
         The grouped IDs.
         Each group is a list.
+        The keys are strings.
     dict of str: list
-        Labels corresponding to each word in words array
+        Labels corresponding to each word in words array.
+        The labels are strings.
     """
     id_nd = np.array([[*id.split('/'), id] for id in ids], dtype=np.dtype('U'))
     word_to_labels = { }

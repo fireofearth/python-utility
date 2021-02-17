@@ -55,6 +55,10 @@ def transform_to_location_ndarray(t):
     """Converts carla.Transform to location ndarray [x, y, z]"""
     return location_to_ndarray(t.location)
 
+def transform_to_yaw(t):
+    """Converts carla.Transform to rotation yaw mod 360"""
+    return t.rotation.yaw % 360.
+
 def transforms_to_location_ndarray(ts):
     """Converts an iterable of carla.Transform to a ndarray of size (len(iterable), 3)"""
     return np.array(util.map_to_list(transform_to_location_ndarray, ts))
