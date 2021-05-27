@@ -11,5 +11,5 @@ python setup.py sdist bdist_wheel
 Install using
 
 ```
-pip install <path to wheel>.whl
+pip install dist/<wheel>.whl
 ```

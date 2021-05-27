@@ -23,3 +23,16 @@ def show_sloped_wps(client, dest=4.0,
     for wp in sloped_wps:
         loc = wp.transform.location
         carlautil.debug_point(client, loc, t=t, c=c)
+
+def show_square(client, x, y, z, r,
+        rotation=carla.Rotation(), t=1.0,
+        c=carla.Color(r=255, g=0, b=0, a=100)):
+    """Create a square at a position with radius.
+    
+    Parameters
+    ----------
+    client : carla.Client or carla.World
+    """
+    l = carla.Location(x, y, z)
+    carlautil.debug_point(client, l, t=t, c=c)
+    carlautil.debug_square(client, l, r, t=t, c=c)
