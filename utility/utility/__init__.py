@@ -1,8 +1,11 @@
 import os
 import json
 from pathlib import Path
+import math
+import operator
 import itertools
 import functools
+
 import numpy as np
 
 class UtilityException(Exception):
@@ -11,6 +14,17 @@ class UtilityException(Exception):
 def hello_world():
     """Test that package installation works"""
     return "Hello World"
+
+####################
+# General operations
+####################
+
+def classname(x):
+    return type(x).__name__
+
+#################
+# File operations
+#################
 
 def get_dirname_of(fn):
     """Get absolute path of the immediate directory the file is in
@@ -49,40 +63,6 @@ def load_json(filepath):
     with open(filepath) as f:
         return json.load(f)
 
-def map_to_list(f, l):
-    """Does map operation and then converts map object to a list."""
-    return list(map(f, l))
-
-def filter_to_list(f, l):
-    """Filter from list elements that return true under f(), returning a list.
-    Example: (lambda x: x > 2, [1,2,3,4,5]) -> [3,4,5]"""
-    return list(filter(f, l))
-
-def compress_to_list(l, bl):
-    """Filter list using a list of selectors, returning a list.
-    Example: ([1,2,3,4,5], [True, False, False, True, False]) -> [1,4]"""
-    return list(itertools.compress(l, bl))
-
-def reduce(f, l, i=None):
-    """
-    Parameters
-    ----------
-    f : (function v, acc: f(v, acc))
-    l : iterable
-    i : any
-    """
-    return functools.reduce(f, l, i)
-
-def merge_list_of_list(ll):
-    """Concatenate iterable of iterables into one list."""
-    return list(itertools.chain.from_iterable(ll))
-
-def space_list(l):
-    return ' '.join(map(str, l))
-
-def underscore_list(l):
-    return space_list(l).replace(' ', '_')
-
 def strip_extension(path):
     """Function to strip file extension
 
@@ -99,9 +79,171 @@ def strip_extension(path):
     p = Path(path)
     return str(p.with_suffix(''))
 
+#######################
+# Functional operations
+#######################
+
+def map_to_list(f, l):
+    """Does map operation and then converts map object to a list."""
+    return list(map(f, l))
+
 def map_to_ndarray(f, l):
     """Does map operation and then converts map object to a list."""
     return np.array(map_to_list(f, l))
+
+def filter_to_list(f, l):
+    """Filter from list elements that return true under f(), returning a list.
+    Example: (lambda x: x > 2, [1,2,3,4,5]) -> [3,4,5]"""
+    return list(filter(f, l))
+
+def compress_to_list(l, bl):
+    """Filter list using a list of selectors, returning a list.
+    Example: ([1,2,3,4,5], [True, False, False, True, False]) -> [1,4]"""
+    # TODO: DEPRECATED
+    return list(itertools.compress(l, bl))
+
+def reduce(*args, **kwargs):
+    """
+
+    Parameters
+    ==========
+    f : (function v, acc: f(v, acc))
+    l : iterable
+    i : any (optional)
+    """
+    return functools.reduce(*args, **kwargs)
+
+def merge_list_of_list(ll):
+    """Concatenate iterable of iterables into one list."""
+    return list(itertools.chain.from_iterable(ll))
+
+def space_list(l):
+    return ' '.join(map(str, l))
+
+def underscore_list(l):
+    return space_list(l).replace(' ', '_')
+
+def reverse_list(l):
+    return list(reversed(l))
+
+def pairwise(l):
+    """Make a list of consecutive pairs given a list. 
+    Example: [1,2,3] -> [(1,2),(2,3)]"""
+    a, b = itertools.tee(l)
+    next(b, None)
+    return list(zip(a, b))
+
+def pairwise_do(f, l):
+    """Make a list by applying operation on consecutive pairs in a list.
+    Example: [1,2,3] -> [1+2,2+3]
+    """
+    a, b = itertools.tee(l)
+    next(b, None)
+    return [f(i, j) for i, j in zip(a, b)]
+
+# itertools.* functions should output to list
+# Replacements of the *_to_list() functions
+
+def compress(*args, **kwargs):
+    """Filter list using a list of selectors, returning a list.
+    Example: ([1,2,3,4,5], [True, False, False, True, False]) -> [1,4]"""
+    return list(itertools.compress(*args, **kwargs))
+
+def accumulate(*args, **kwargs):
+    """Accumulate list, returning a list.
+    Example: [1,2,3] -> [1,3,6]; [1,2,3], initial=100 -> [100,101,103,106]"""
+    return list(itertools.accumulate(*args, **kwargs))
+
+#################
+# Math operations
+#################
+
+def sgn(x):
+    """Get the sign of a number as int. 1.2 -> 1 and -1.2 -> -1"""
+    return int(math.copysign(1, x))
+
+#######################
+# Numpy math operations
+#######################
+
+def reflect_radians_about_x_axis(r):
+    r = (-r) % (2*np.pi)
+    return r
+
+def reflect_radians_about_y_axis(r):
+    r = (r + np.pi) % (2*np.pi)
+    return r
+
+def inverse_2d(A):
+    a, b, c, d = A[0,0], A[0,1], A[1,0], A[1,1]
+    return 1. / (a*d - b*c) * np.array([[d, -b], [-c, a]])
+
+def rotation_2d(theta):
+    """2D rotation matrix. If x is a column vector of 2D points then
+    `rotation_2d(theta) @ x` gives the rotated points.
+    
+    Parameters
+    ==========
+    theta : float
+        Rotates points clockwise about origin if theta is positive.
+        Rotates points counter-clockwise about origin if theta is negative
+    
+    Returns
+    =======
+    np.array
+        2D rotation matrix of shape (2, 2).
+    """
+    return np.array([
+            [ np.cos(theta), np.sin(theta)],
+            [-np.sin(theta), np.cos(theta)]])
+
+def distances_from_line_2d(points, x_start, y_start, x_end, y_end):
+    """Get the distances from each point to a line spanned by line segment from
+    (x_start, y_start) to (x_end, y_end). Works for horizontal and vertical lines.
+    
+    Based on:
+    https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+
+    Parameters
+    ==========
+    points : np.array or list
+        One 2D point, or multiple 2D points of shape (n, 2).
+    x_start : float
+        Line segment component
+    y_start : float
+        Line segment component
+    x_end : float
+        Line segment component
+    y_end : float
+        Line segment component
+
+    Returns
+    =======
+    float or np.array
+        Distance of point to line, or array of distances from points to line.
+    """
+    points = np.array(points)
+    if points.ndim == 1:
+        return np.abs((x_end - x_start)*(y_start - points[1]) - (x_start - points[0])*(y_end - y_start)) \
+                / np.sqrt((x_end - x_start)**2 + (y_end - y_start)**2)
+    elif points.ndim == 2:
+        return np.abs((x_end - x_start)*(y_start - points[:, 1]) - (x_start - points[:, 0])*(y_end - y_start)) \
+                / np.sqrt((x_end - x_start)**2 + (y_end - y_start)**2)
+    else:
+        raise UtilityException(f"Points of dimension {points.ndim} are not 1 or 2")
+
+################
+# Useful Classes
+################
+
+class AttrDict(dict):
+    def __init__(self, *args, **kwargs):
+        super(AttrDict, self).__init__(*args, **kwargs)
+        self.__dict__ = self
+
+####################
+# Dataset operations
+####################
 
 def create_sample_pattern(sample_pattern):
     """Given a string of '/' separated words, create a dict of the words and their ordering in the string. Idempotent.

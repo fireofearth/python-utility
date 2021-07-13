@@ -8,6 +8,9 @@ import carla
 
 import utility as util
 
+class CARLAUtilException(Exception):
+    pass
+
 def make_client(host='127.0.0.1', port=2000):
     """Create a client. Useful for debugging in the Python interpreter."""
     return carla.Client(host, port)
@@ -67,6 +70,14 @@ def location_to_ndarray(l):
     """Converts carla.Location to ndarray [x, y, z]"""
     return np.array([l.x, l.y, l.z])
 
+def rotation_to_ndarray(r):
+    """Converts carla.Rotation to ndarray [pitch, yaw, roll]"""
+    return np.deg2rad([r.pitch, r.yaw, r.roll])
+
+def locations_to_ndarray(ls):
+    """Converts list of carla.Location to ndarray of size (len(ls), 3)."""
+    return np.array(util.map_to_list(location_to_ndarray, ls))
+
 def ndarray_to_location(v):
     """ndarray of form [x, y, z] to carla.Location."""
     return carla.Location(x=v[0], y=v[1], z=v[2])
@@ -75,37 +86,85 @@ def actor_to_location_ndarray(a):
     """Converts carla.Actor's location to ndarray [x, y, z]"""
     return location_to_ndarray(a.get_location())
 
-def vehicle_to_xyz_lwh_pyr_ndarray(a):
-    """Converts carla.Vehicle's transformation
-    to ndarray [x, y, z, length, width, height, pitch, yaw, roll]"""
+def to_location_ndarray(a):
+    """Converts location of object of relevant carla class to ndarray
+    [x, y, z]"""
+    if isinstance(a, carla.Actor):
+        return location_to_ndarray(a.get_location())
+    elif isinstance(a, carla.Waypoint):
+        return location_to_ndarray(a.transform.location)
+    elif isinstance(a, carla.Transform):
+        return location_to_ndarray(a.location)
+    elif isinstance(a, carla.Location):
+        return location_to_ndarray(a)
+    else:
+        raise CARLAUtilException("Not relevant carla class.")
+
+def actor_to_velocity_ndarray(a):
+    """Converts carla.Actor's component-wise velocity to ndarray
+    [vel_x, vel_y, vel_z]"""
+    v = a.get_velocity()
+    return np.array([v.x, v.y, v.z])
+
+def actor_to_bbox_ndarray(a):
+    """Converts carla.Actor's bounding box dimensions to ndarray
+    [bbox_x, bbox_y, box_z]. bbox_x is the length on the longitudinal axis,
+    bbox_y is the length on the lateral axis."""
+    bb = a.bounding_box.extent
+    return np.array([2*bb.x, 2*bb.y, 2*bb.z])
+
+def actor_to_rotation_ndarray(a):
+    """Converts carla.Actor's component-wise velocity to ndarray
+    [pitch, yaw, roll]"""
     t = a.get_transform()
+    r = t.rotation
+    return np.deg2rad([r.pitch, r.yaw, r.roll])
+
+def to_rotation_ndarray(a):
+    """Converts velocity of object of relevant carla class to ndarray
+    [pitch, yaw, roll]"""
+    if isinstance(a, carla.Actor):
+        return rotation_to_ndarray(a.get_transform().rotation)
+    elif isinstance(a, carla.Waypoint):
+        return rotation_to_ndarray(a.transform.rotation)
+    elif isinstance(a, carla.Transform):
+        return rotation_to_ndarray(a.rotation)
+    else:
+        raise CARLAUtilException("Not relevant carla class.")
+
+def actor_to_Lxyz_Vxyz_Axyz_Rpyr_ndarray(a):
+    """Converts carla.Vehicle
+    to ndarray [pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, acc_x, acc_y, acc_z,
+    length, width, height, pitch, yaw, roll] where pitch, yaw, roll are in
+    radians."""
+    bb = a.bounding_box.extent
+    t = a.get_transform()
+    v = a.get_velocity()
+    a = a.get_acceleration()
     l = t.location
     r = t.rotation
+    l = [l.x, l.y, l.z]
+    v = [v.x, v.y, v.z]
+    a = [a.x, a.y, a.z]
+    bb = [2*bb.x, 2*bb.y, 2*bb.z]
     r = np.deg2rad([r.pitch, r.yaw, r.roll])
-    bb = a.bounding_box.extent
-    return np.array([l.x, l.y, l.z, 2*bb.x, 2*bb.y, 2*bb.z, *r])
+    return np.concatenate((l, v, a, bb, r))
 
 def actors_to_location_ndarray(alist):
     """Converts iterable of carla.Actor to a ndarray of size (len(alist), 3)"""
     return np.array(util.map_to_list(actor_to_location_ndarray, alist))
 
-def vehicles_to_xyz_lwh_pyr_ndarray(alist):
+def actors_to_Lxyz_Vxyz_Axyz_Rpyr_ndarray(alist):
     """Converts iterable of carla.Actor transformation
-    to an ndarray of size (len(alist), 9) where each row is
-    [x, y, z, length, width, height, pitch, yaw, roll]"""
-    return np.array(util.map_to_list(vehicle_to_xyz_lwh_pyr_ndarray, alist))
+    to an ndarray of size (len(alist), 15) where each row is
+    [pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, acc_x, acc_y, acc_z,
+    length, width, height, pitch, yaw, roll]
+    where pitch, yaw, roll are in radians."""
+    return np.array(util.map_to_list(actor_to_Lxyz_Vxyz_Axyz_Rpyr_ndarray, alist))
 
 def transform_to_location_ndarray(t):
     """Converts carla.Transform to location ndarray [x, y, z]"""
     return location_to_ndarray(t.location)
-
-def tranform_to_xyz_pyr_ndarray(t):
-    """Converts carla.Transform to
-    ndarray [x, y, z, pitch, yaw, roll]"""
-    l = t.location
-    r = t.rotation
-    r = np.deg2rad([r.pitch, r.yaw, r.roll])
-    return np.array([l.x, l.y, l.z, *r])
 
 def transform_to_yaw(t):
     """Converts carla.Transform to rotation yaw mod 360"""
@@ -114,7 +173,6 @@ def transform_to_yaw(t):
 def transforms_to_location_ndarray(ts):
     """Converts an iterable of carla.Transform to a ndarray of size (len(iterable), 3)"""
     return np.array(util.map_to_list(transform_to_location_ndarray, ts))
-
 
 def transform_points(transform, points):
     """Given a 4x4 transformation matrix, transform an array of 3D points.
