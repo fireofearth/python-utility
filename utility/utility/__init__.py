@@ -79,9 +79,9 @@ def strip_extension(path):
     p = Path(path)
     return str(p.with_suffix(''))
 
-#######################
-# Functional operations
-#######################
+#########################
+# (Functional) operations
+#########################
 
 def map_to_list(f, l):
     """Does map operation and then converts map object to a list."""
@@ -141,6 +141,140 @@ def pairwise_do(f, l):
     next(b, None)
     return [f(i, j) for i, j in zip(a, b)]
 
+def longest_subsequence(l, cond=None):
+    """Get the longest subsequence of the list composed of entries
+    where cond is true. For example:
+    (lambda l, i: l[i], [1, 0, 1, 1, 1, 0, 1]) -> ((slice(2, 5), 3)
+    
+    Parameters
+    ==========
+    l : list or np.array
+        The list to get subsequence from. 
+    cond : function (l, i) -> bool
+        To check whether list entries belong to the subsequence.
+        If not passed the check using truthiness. 
+    
+    Returns
+    =======
+    slice or None
+        The slice object to get the subsequence.
+    int
+        The length of the subsequence.
+        Check that such subsequence exist using the length.
+    """
+    if not cond:
+        cond = lambda x: x
+    n = len(l)
+    longest_size  = 0
+    longest_begin = None
+    longest_end   = None
+    curr_end = 0
+    while curr_end < n:
+        if cond(l[curr_end]):
+            curr_size = 1
+            curr_begin = curr_end
+            while curr_end < n - 1 and cond(l[curr_end+1]):
+                curr_size += 1
+                curr_end  += 1
+            if curr_size > longest_size:
+                longest_size = curr_size
+                longest_begin = curr_begin
+                longest_end = curr_end
+            curr_end += 1
+        curr_end += 1
+    if longest_size == 0:
+        return None, longest_size
+    else:
+        return slice(longest_begin, longest_end+1), longest_size
+
+def longest_sequence_using_split(l, split):
+    """Get the longest subsequence of the list after it has been
+    split into segments. For example if split is the function
+    lambda l, i: l[i + 1] != l[i] + 1 if i < len(l) - 1 else False
+    then
+    ([1, 2, 3, 2, 3, 4, 5, 1, 2], split) -> ((slice(3, 7), 4)
+    as split gives
+    [1, 2, 3 | 2, 3, 4, 5 | 1, 2]
+    
+    Parameters
+    ==========
+    l : list or np.array
+        The list to get subsequence.
+    split : function (l, i) -> bool
+        To check whether to split the list.
+    
+    Returns
+    =======
+    slice or None
+        The slice object to get the subsequence.
+    int
+        The length of the subsequence.
+    """
+    n = len(l)
+    longest_size  = 0
+    longest_begin = None
+    longest_end   = None
+    curr_begin = 0
+    curr_end   = 0
+    while curr_end < n:
+        if split(l, curr_end) or curr_end == n - 1:
+            if (curr_end - curr_begin + 1)  > longest_size:
+                longest_size  = curr_end - curr_begin + 1
+                longest_begin = curr_begin
+                longest_end   = curr_end
+            curr_begin = curr_end + 1
+            curr_end   = curr_end + 1
+        else:
+            curr_end  += 1
+    if longest_size == 0:
+        return None, longest_size
+    else:
+        return slice(longest_begin, longest_end+1), longest_size
+
+def longest_consecutive_increasing_subsequence(l):
+    """Get the longest consecutively increasing subsequence.
+    
+    Parameters
+    ==========
+    list of int
+        The list to get subsequence.
+    
+    Returns
+    =======
+    slice or None
+        The slice object to get the subsequence.
+    int
+        The length of the subsequence.
+    """
+    def split(l, i):
+        try:
+            return l[i + 1] != l[i] + 1
+        except:
+            return False
+    return longest_sequence_using_split(l, split)
+
+def longest_consecutive_decreasing_subsequence(l):
+    """Get the longest consecutively decreasing subsequence.
+    
+    Parameters
+    ==========
+    list of int
+        The list to get subsequence.
+    
+    Returns
+    =======
+    slice or None
+        The slice object to get the subsequence.
+    int
+        The length of the subsequence.
+    """
+    def split(l, i):
+        try:
+            return l[i + 1] != l[i] - 1
+        except:
+            return False
+    return longest_sequence_using_split(l, split)
+
 # itertools.* functions should output to list
 # Replacements of the *_to_list() functions
 
@@ -166,6 +300,43 @@ def sgn(x):
 # Numpy math operations
 #######################
 
+def is_positive_semidefinite(X):
+    """Check that a matrix is positive semidefinite
+    
+    Based on:
+    https://stackoverflow.com/a/63911811
+    """
+    if X.shape[0] != X.shape[1]:
+        return False
+    if not np.all( X - X.T == 0 ):
+        return False
+    try:
+        regularized_X = X + np.eye(X.shape[0]) * 1e-14
+        np.linalg.cholesky(regularized_X)
+    except np.linalg.linalg.LinAlgError as err:
+        if "Matrix is not positive definite"  == str(err):
+            return False
+        raise err
+    return True
+
+def is_positive_definite(X):
+    """Check that a matrix is positive definite
+    
+    Based on:
+    https://stackoverflow.com/a/63911811
+    """
+    if X.shape[0] != X.shape[1]:
+        return False
+    if not np.all( X - X.T == 0 ):
+        return False
+    try:
+        np.linalg.cholesky(X)
+    except np.linalg.linalg.LinAlgError as err:
+        if "Matrix is not positive definite"  == str(err):
+            return False
+        raise err
+    return True
+
 def reflect_radians_about_x_axis(r):
     r = (-r) % (2*np.pi)
     return r
@@ -173,6 +344,10 @@ def reflect_radians_about_x_axis(r):
 def reflect_radians_about_y_axis(r):
     r = (r + np.pi) % (2*np.pi)
     return r
+
+def determinant_2d(A):
+    a, b, c, d = A[0,0], A[0,1], A[1,0], A[1,1]
+    return a*d - b*c
 
 def inverse_2d(A):
     a, b, c, d = A[0,0], A[0,1], A[1,0], A[1,1]
@@ -344,7 +519,7 @@ def label_from_id(sample_id, word, sample_pattern):
     int
         Patch size
     """
-    return int(patch_id.split('/')[patch_pattern[word]])
+    return int(sample_id.split('/')[sample_pattern[word]])
 
 def group_ids(ids, words, sample_pattern):
     """Group IDs by in the order of the words in the words array.
