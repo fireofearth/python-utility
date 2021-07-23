@@ -138,6 +138,10 @@ def compress_to_list(l, bl):
     # TODO: DEPRECATED
     return list(itertools.compress(l, bl))
 
+def subdict(d, ks):
+    """Get a sub-dict from a dict containing the set of keys."""
+    return {k: d[k] for k in ks if k in d}
+
 def reduce(*args, **kwargs):
     """
 
