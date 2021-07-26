@@ -235,6 +235,9 @@ def get_junctions_from_topology_graph(topology):
         filter(lambda v: v.is_junction, topology.nodes))
     return list({j.id: j for j in junctions}.values())
 
+# Scratch work
+##############
+
 """Creating internal library for similarity transformations
 since CARLA transformation matrices are unreliable.
 
@@ -272,9 +275,6 @@ def create_z_rotation_mtx(c):
             [np.sin(c),  np.cos(c), 0, 0],
             [0,          0,         1, 0],
             [0,          0,         0, 1]])
-
-# Scratch work
-##############
 
 def transform_to_translation_mtx(transform):
     l = transform.location

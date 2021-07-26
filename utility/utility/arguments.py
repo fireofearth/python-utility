@@ -1,7 +1,5 @@
-import functools
 import argparse
 import os
-import yaml
 
 def dir_path(s):
     """Directory path type for argparse"""

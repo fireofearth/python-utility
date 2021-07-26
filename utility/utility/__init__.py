@@ -138,9 +138,37 @@ def compress_to_list(l, bl):
     # TODO: DEPRECATED
     return list(itertools.compress(l, bl))
 
+def filter_next(f, l, default=None):
+    """Filter and get next in list."""
+    return next(filter(f, l), default)
+
 def subdict(d, ks):
     """Get a sub-dict from a dict containing the set of keys."""
     return {k: d[k] for k in ks if k in d}
+
+def from_dict_with_remainder(d, ks):
+    """Get values from dict and return remaining keys. Example:
+    ({'a': 0, 'b': 1, 'c': 2, 'd': 3}, 'cdef') -> [2, 3], ['f', 'e']
+
+    Parameters
+    ==========
+    d : dict
+        Dict to search.
+    ks : list
+        Keys to get values from the dict.
+
+    Returns
+    =======
+    list
+        Values in d with keys in ks.
+        Equivalent to the output from
+        [d[k] for k in ks if k in d]
+    list
+        Remaining keys from ks that are not in d.
+    """
+    leftover = set(ks) - set(d.keys())
+    ks = set(ks) & set(d.keys())
+    return map_to_list(d.get, ks), list(leftover)
 
 def reduce(*args, **kwargs):
     """
@@ -601,8 +629,8 @@ class IDMaker(object):
     def fstring(self):
         return self.__fstring
         
-    def make_id(self, map_name, episode, agent, frame):
-        return self.__fstring.format(**locals())
+    def make_id(self, **kwargs):
+        return self.__fstring.format(**kwargs)
 
     def filter_ids(self, ids, filter, inclusive=True):
         """
@@ -958,9 +986,11 @@ def save_datum(datum, directory, filename):
         raise UtilityException(f"{directory} does not exist.")
     if filename.startswith('/'):
         raise UtilityException(f"filename {filename} cannot begin with a '/'.")
+
     """Create subfolders if necessary"""
     filepath = os.path.join(directory, filename)
     os.makedirs(get_dirname_of(filepath), exist_ok=True)
+
     """Save the file"""
     filepath = filepath if filepath.endswith('.json') else f"{filepath}.json"
     with open(filepath, 'w') as f:
