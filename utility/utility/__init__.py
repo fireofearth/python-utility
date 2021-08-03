@@ -24,6 +24,22 @@ def hello_world():
 def classname(x):
     return type(x).__name__
 
+def is_iterable(x):
+    try:
+        iter(x)
+        return True
+    except:
+        return False
+
+######################
+# Useful Basic Classes
+######################
+
+class AttrDict(dict):
+    def __init__(self, *args, **kwargs):
+        super(AttrDict, self).__init__(*args, **kwargs)
+        self.__dict__ = self
+
 #################
 # File operations
 #################
@@ -138,9 +154,14 @@ def compress_to_list(l, bl):
     # TODO: DEPRECATED
     return list(itertools.compress(l, bl))
 
-def filter_next(f, l, default=None):
+def filter_next(f, l, n=1, default=None):
     """Filter and get next in list."""
     return next(filter(f, l), default)
+
+def filter_to_sublist(f, l, n):
+    """Filter and get the first n in list, returning a list.
+    Example: (lambda x: x[1] == 'b', zip(range(7),'aabbbcc'), 2) -> [(2, 'b'), (3, 'b')]"""
+    return list(itertools.islice(filter(f, l), n))
 
 def subdict(d, ks):
     """Get a sub-dict from a dict containing the set of keys."""
@@ -416,6 +437,11 @@ def accumulate(*args, **kwargs):
     Example: [1,2,3] -> [1,3,6]; [1,2,3], initial=100 -> [100,101,103,106]"""
     return list(itertools.accumulate(*args, **kwargs))
 
+def starmap(*args, **kwargs):
+    """Star-maps list, returning a list.
+    Example: (pow, [(2,5), (3,2), (10,3)]) -> [32, 9, 1000]"""
+    return list(itertools.starmap(*args, **kwargs))
+
 #################
 # Math operations
 #################
@@ -427,6 +453,35 @@ def sgn(x):
 #######################
 # Numpy math operations
 #######################
+
+def decision_to_value(b, values=(1, -1)):
+    """Map binary decisions to corresponding values.
+
+    Parameters
+    ==========
+    b : bool or ndarray of bool
+        Decision variables.
+    values: tuple
+        Values to map decision variables to.
+        False -> values[0] and True -> values[1]
+        By default False -> 1 and True -> -1.
+    
+    Returns
+    =======
+    Number or ndarray of Number
+        Values.
+    """
+    if isinstance(b, bool):
+        return values[0]*int(not b) + values[1]*int(b)
+    elif isinstance(b, list):
+        return map_to_list(lambda x: decision_to_value(x, values=values), b)
+    elif isinstance(b, np.ndarray):
+        if np.issubdtype(b.dtype, np.dtype('bool')):
+            return values[0]*np.logical_not(b) + values[1]*b
+        else:
+            raise ValueError(f"Cannot handle dtype {str(b.dtype)}")
+    else:
+        raise NotImplementedError(f"Handing type {type(b)} not implemented.")
 
 def is_positive_semidefinite(X):
     """Check that a matrix is positive semidefinite
@@ -464,6 +519,12 @@ def is_positive_definite(X):
             return False
         raise err
     return True
+
+def indices_to_selection_mask(indices, n):
+    mask = np.full(n, False)
+    for idx in indices:
+        mask[idx] = True
+    return mask
 
 def reflect_radians_about_x_axis(r):
     r = (-r) % (2*np.pi)
@@ -535,14 +596,68 @@ def distances_from_line_2d(points, x_start, y_start, x_end, y_end):
     else:
         raise UtilityException(f"Points of dimension {points.ndim} are not 1 or 2")
 
-################
-# Useful Classes
-################
+def vertices_of_bboxes(centers, thetas, lw):
+    """Get the vertices of N rectanglar bounding boxes given the centers of the boxes,
+    the thetas the boxes they are pointing at, and the length and width of the boxes,
+    assuming the length and widths of all boxes are the same.
 
-class AttrDict(dict):
-    def __init__(self, *args, **kwargs):
-        super(AttrDict, self).__init__(*args, **kwargs)
-        self.__dict__ = self
+    Parameters
+    ==========
+    centers : np.ndarray
+        The centers of the bounding boxes of shape (N, 2).
+    thetas : np.ndarray
+        The direction the boxes are pointing at in radians of shape (N,)
+    lw : np.ndarray
+        The length and width of the box.
+
+    Returns
+    =======
+    np.ndarray
+        The vertices of the boxes of shape (N,4,2).
+    """
+    C = np.cos(thetas)
+    S = np.sin(thetas)
+    rot11 = np.stack(( C,  S), axis=-1)
+    rot12 = np.stack(( S, -C), axis=-1)
+    rot21 = np.stack(( C, -S), axis=-1) 
+    rot22 = np.stack(( S,  C), axis=-1)
+    rot31 = np.stack((-C, -S), axis=-1)
+    rot32 = np.stack((-S,  C), axis=-1)
+    rot41 = np.stack((-C,  S), axis=-1)
+    rot42 = np.stack((-S, -C), axis=-1)
+    # Rot has shape (1000, 8, 2)
+    Rot = np.stack((rot11, rot12, rot21, rot22, rot31, rot32, rot41, rot42), axis=1)
+    # disp has shape (1000, 8)
+    disp = 0.5 * Rot @ lw
+    # centers has shape (1000, 8)
+    centers = np.tile(centers, (4,))
+    return np.reshape(centers + disp, (-1,4,2))
+
+def vertices_from_bbox(center, theta, lw):
+    return vertices_of_bboxes(np.array([center]), np.array([theta]), lw)[0]
+
+#####################
+# Compound Operations
+#####################
+
+def select(l, i):
+    """Select from iterable using an index of a list of indices,
+    returning a list with entries in the same order as their
+    corresponding indices. Examples:
+
+    """
+    if is_iterable(i):
+        indices = i
+        try:
+            return [l[i] for i in indices]
+        except TypeError:
+            mask = indices_to_selection_mask(indices, max(indices))
+            return compress(l, mask)
+    else:
+        try:
+            return l[i]
+        except TypeError:
+            return next(itertools.islice(l, i, None))
 
 ####################
 # Dataset operations
