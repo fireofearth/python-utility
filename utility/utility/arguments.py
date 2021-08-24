@@ -9,6 +9,14 @@ def dir_path(s):
         raise argparse.ArgumentTypeError(
                 f"readable_dir:{s} is not a valid path")
 
+def file_path(s):
+    """Directory path type for argparse"""
+    if os.path.isfile(s):
+        return s
+    else:
+        raise argparse.ArgumentTypeError(
+                f"{s} is not an existing file path")
+
 def str_kv(kv):
     """Used to identify and convert key=value arguments into a tuple (key, value). Value stays as a str.
     This is to be passed as the type when calling argparse.ArgumentParser.add_argument()

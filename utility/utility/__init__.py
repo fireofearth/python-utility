@@ -434,7 +434,7 @@ def compress(*args, **kwargs):
 
 def accumulate(*args, **kwargs):
     """Accumulate list, returning a list.
-    Example: [1,2,3] -> [1,3,6]; [1,2,3], initial=100 -> [100,101,103,106]"""
+    Example: ([1,2,3] -> [1,3,6]; [1,2,3], initial=100) -> [100,101,103,106]"""
     return list(itertools.accumulate(*args, **kwargs))
 
 def starmap(*args, **kwargs):
@@ -636,6 +636,67 @@ def vertices_of_bboxes(centers, thetas, lw):
 def vertices_from_bbox(center, theta, lw):
     return vertices_of_bboxes(np.array([center]), np.array([theta]), lw)[0]
 
+def pairs2d_to_halfspace(p1, p2):
+    """Get half-space representation dividing the left side and the right side
+    of the line formed by two points in R^2. The points x where Ax <= b are on
+    the right side of the arrow from p1 to p2.
+    
+     x_2
+      ^
+      |  \
+      |   \  Ax > b
+      |    p1
+    --|-----\------> x_1
+      |      p2
+     Ax <= b  \
+      |        \
+
+    Parameters
+    ==========
+    p1 : ndarray
+        First point
+    p2 : ndarray
+        Second point
+    
+    Returns
+    =======
+    np.array
+        A where Ax <= b
+    int
+        b where Ax <= b
+    
+    """
+    p11, p12 = p1
+    p21, p22 = p2
+    A = np.array([p12-p22, p21-p11])
+    b = (p12 - p22)*p11 + (p21 - p11)*p12
+    return A, b
+
+def vertices_to_halfspace_representation(vertices):
+    """Vertices of convex polytope to half-space representation (A, b).
+    where points x, A x <= b are inside the polytope. 
+    
+    Parameters
+    ==========
+    vertices : np.array
+        Vertices of convex polytope of shape (N, 2) where N is the number of vertices.
+        The vertices are sorted in clockwise order along the first axis and N > 2.
+        
+    Returns
+    =======
+    np.array
+        A where x, Ax <= b are the points of the polytope 
+    np.array
+        b where x, Ax <= b are the points of the polytope
+    """
+    vertices = np.concatenate((vertices, vertices[0][None],), axis=0)
+    A = []; b = []
+    for p1, p2 in pairwise(vertices):
+        _A, _b = pairs2d_to_halfspace(p1, p2)
+        A.append(_A); b.append(_b)
+    A = np.stack(A); b = np.array(b)
+    return A, b
+
 #####################
 # Compound Operations
 #####################
@@ -651,7 +712,7 @@ def select(l, i):
         try:
             return [l[i] for i in indices]
         except TypeError:
-            mask = indices_to_selection_mask(indices, max(indices))
+            mask = indices_to_selection_mask(indices, max(indices)+1)
             return compress(l, mask)
     else:
         try:
@@ -707,9 +768,7 @@ class IDMaker(object):
     carla_id_maker.make_id(map_name='Town04', episode=1, agent=123, frame=1000)
     ```
     
-    gives
-
-    Town04/ep001/agent123/frame00001000
+    gives Town04/ep001/agent123/frame00001000
     """
 
     @staticmethod
@@ -737,6 +796,10 @@ class IDMaker(object):
         self.__fstring = self.make_fstring()
 
     @property
+    def sample_pattern_str(self):
+        return self.__sample_pattern_str
+
+    @property
     def sample_pattern(self):
         return self.__sample_pattern
     
@@ -748,7 +811,25 @@ class IDMaker(object):
         return self.__fstring.format(**kwargs)
 
     def filter_ids(self, ids, filter, inclusive=True):
-        """
+        """Filter IDs.
+
+        Parameters
+        ==========
+        ids : list of str
+            List of IDs of the same form as given by the string value
+            given by `IDMaker.sample_pattern_str`.
+            For example if sample_pattern_str is map_name/episode/agent/frame
+            then an ID might look like Town02/ep002/agent004/frame00000530.
+        filter : dict
+            The filter for IDs of form (key, value). For example:
+            {'map_name': 'Town02'} will filter for the map_name 'part' of the ID.
+        inclusive : bool
+            Whether to filter inclusively or exclusively.
+            
+        Returns
+        =======
+        list of str
+            List of IDs.
         """
         for word in filter.keys():
             if not isinstance(filter[word], (list, np.ndarray)):
