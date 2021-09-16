@@ -88,7 +88,8 @@ def rotation_to_ndarray(r, flip_x=False, flip_y=False):
         return np.deg2rad([r.pitch, r.yaw, r.roll])
 
 def locations_to_ndarray(ls, flip_x=False, flip_y=False):
-    """Converts list of carla.Location to ndarray of size (len(ls), 3)."""
+    """Converts list of carla.Location to ndarray of size (len(ls), 3).
+    DEPRECATED: use to_locations_ndarray()"""
     return util.map_to_ndarray(
             lambda l: location_to_ndarray(l, flip_x=flip_x, flip_y=flip_y), ls)
 
@@ -115,6 +116,11 @@ def to_location_ndarray(a, flip_x=False, flip_y=False):
         return location_to_ndarray(a, flip_x=flip_x, flip_y=flip_y)
     else:
         raise CARLAUtilException("Not relevant carla class.")
+
+def to_locations_ndarray(l, flip_x=False, flip_y=False):
+    """Converts list of object of relevant carla class to ndarray of size (len(l), 3)"""
+    return util.map_to_ndarray(
+            lambda a: to_location_ndarray(a, flip_x=flip_x, flip_y=flip_y), l)
 
 def actor_to_velocity_ndarray(a, flip_x=False, flip_y=False):
     """Converts carla.Actor's component-wise velocity to ndarray
@@ -148,6 +154,11 @@ def to_rotation_ndarray(a, flip_x=False, flip_y=False):
         return rotation_to_ndarray(a.rotation, flip_x=flip_x, flip_y=flip_y)
     else:
         raise CARLAUtilException("Not relevant carla class.")
+
+def to_rotations_ndarray(l, flip_x=False, flip_y=False):
+    """Converts list of object of relevant carla class to ndarray of size (len(l), 3)"""
+    return util.map_to_ndarray(
+            lambda a: to_rotation_ndarray(a, flip_x=flip_x, flip_y=flip_y), l)
 
 def actor_to_Lxyz_Vxyz_Axyz_Rpyr_ndarray(a, flip_x=False, flip_y=False):
     """Converts carla.Vehicle
@@ -187,7 +198,8 @@ def transform_to_location_ndarray(t, flip_x=False, flip_y=False):
     return location_to_ndarray(t.location, flip_x=flip_x, flip_y=flip_y)
 
 def transform_to_yaw(t):
-    """Converts carla.Transform to rotation yaw mod 360"""
+    """Converts carla.Transform to rotation yaw mod 360
+    DEPRECATED"""
     return t.rotation.yaw % 360.
 
 def transforms_to_location_ndarray(ts, flip_x=False, flip_y=False):
