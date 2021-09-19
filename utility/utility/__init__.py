@@ -125,6 +125,20 @@ def shuffle_nested_dict_of_list(dl):
         random.shuffle(l)
     do_on_nested_dict_of_list(f, dl)
 
+def setget_dict_from_dict(d, k):
+    try:
+        return k[d]
+    except IndexError:
+        k[d] = { }
+        return k[d]
+
+def setget_list_from_dict(d, k):
+    try:
+        return k[d]
+    except IndexError:
+        k[d] = [ ]
+        return k[d]
+
 #########################
 # (Functional) operations
 #########################
@@ -906,6 +920,25 @@ class IDMaker(object):
     def make_id(self, **kwargs):
         return self.__fstring.format(**kwargs)
 
+    def extract_value(self, ids, label):
+        """Extract labels an ID or a list of IDs,
+        specifying the word.
+
+        Parameters
+        ==========
+        id : str
+        label : str or (list of str)
+
+        Returns
+        =======
+        str or (list of str)
+        """
+        sp = self.__sample_pattern
+        if isinstance(ids, str):
+            return ids.split('/')[sp[label]]
+        else:
+            return [id.split('/')[sp[label]] for id in ids]
+
     def filter_ids(self, ids, filter, inclusive=True):
         """Filter IDs.
 
@@ -926,6 +959,8 @@ class IDMaker(object):
         =======
         list of str
             List of IDs.
+
+        TODO: specify dtype of id ndarray as np.dtype('U')
         """
         for word in filter.keys():
             if not isinstance(filter[word], (list, np.ndarray)):
@@ -1096,6 +1131,10 @@ class IDMaker(object):
                 group[common_id] = []
             group[common_id].append(id)
         return group
+
+"""
+TODO: the below is deprecated
+"""
 
 def create_sample_id(path, sample_pattern=None, rootpath=None):
     """Create sample ID from path either by

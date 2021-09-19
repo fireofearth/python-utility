@@ -240,3 +240,62 @@ def test_group_ids_by_index():
     }
     util.sort_nested_dict_of_list(expected)
     assert actual == expected
+
+def test_extract_value():
+    id_maker = util.IDMaker('map_name/episode/agent/frame')
+    ids = ['Town01/ep001/agent001/frame00001000',
+           'Town01/ep001/agent002/frame00001000',
+           'Town01/ep001/agent003/frame00001000',
+           'Town01/ep001/agent001/frame00002000',
+           'Town01/ep001/agent002/frame00002000',
+           'Town01/ep002/agent001/frame00000500',
+           'Town01/ep002/agent002/frame00000500',
+           'Town01/ep002/agent003/frame00000530',
+           'Town02/ep002/agent004/frame00000530',
+           'Town02/ep003/agent001/frame00000100',
+           'Town02/ep003/agent002/frame00000100',
+           'Town02/ep004/agent001/frame00000100',
+           'Town02/ep004/agent002/frame00000100',
+           'Town03/ep005/agent001/frame00001000',
+           'Town03/ep005/agent001/frame00002000']
+
+    expected = 'agent001'
+    actual = id_maker.extract_value(ids[0], 'agent')
+    assert actual == expected
+
+    expected = ['Town01', 'Town01', 'Town01', 'Town01', 'Town01',
+            'Town01', 'Town01', 'Town01', 'Town02', 'Town02',
+            'Town02', 'Town02', 'Town02', 'Town03', 'Town03']
+    actual = id_maker.extract_value(ids, 'map_name')
+    assert actual == expected
+
+    expected = ['ep001', 'ep001', 'ep001', 'ep001', 'ep001',
+            'ep002', 'ep002', 'ep002', 'ep002', 'ep003', 'ep003',
+            'ep004', 'ep004', 'ep005', 'ep005']
+    actual = id_maker.extract_value(ids, 'episode')
+    assert actual == expected
+    
+    expected = ['agent001', 'agent002', 'agent003', 'agent001',
+            'agent002', 'agent001', 'agent002', 'agent003',
+            'agent004', 'agent001', 'agent002', 'agent001',
+            'agent002', 'agent001', 'agent001']
+    actual = id_maker.extract_value(ids, 'agent')
+    assert actual == expected
+    
+    expected = ['frame00001000', 'frame00001000', 'frame00001000',
+            'frame00002000', 'frame00002000', 'frame00000500',
+            'frame00000500', 'frame00000530', 'frame00000530',
+            'frame00000100', 'frame00000100', 'frame00000100',
+            'frame00000100', 'frame00001000', 'frame00002000']
+    actual = id_maker.extract_value(ids, 'frame')
+    assert actual == expected
+
+
+
+
+
+
+
+
+
+
