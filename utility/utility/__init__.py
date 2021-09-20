@@ -128,14 +128,14 @@ def shuffle_nested_dict_of_list(dl):
 def setget_dict_from_dict(d, k):
     try:
         return d[k]
-    except IndexError:
+    except KeyError:
         d[k] = { }
         return d[k]
 
 def setget_list_from_dict(d, k):
     try:
         return d[k]
-    except IndexError:
+    except KeyError:
         d[k] = [ ]
         return d[k]
 
