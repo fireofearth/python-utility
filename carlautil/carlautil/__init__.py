@@ -207,6 +207,24 @@ def transforms_to_location_ndarray(ts, flip_x=False, flip_y=False):
     return util.map_to_ndarray(
             lambda t: transform_to_location_ndarray(t, flip_x=flip_x, flip_y=flip_y), ts)
 
+def move_along_road(carla_map, transform, distance):
+    """Given a transform on a road. Select another transform some distance
+    forward or backwards on the road.
+
+    Parameters
+    ==========
+    carla_map : carla.Map
+        To query the road on the map.
+    transform : carla.Transform
+        The transform on the road to select another one relative to it.
+    distance : float
+        Distance in meters forward if distance > 0, or backward if distance > 0.
+    """
+    wp = carla_map.get_waypoint(transform.location,
+            project_to_road=True, lane_type=carla.LaneType.Driving)
+    if distance < 0: return wp.previous(abs(distance))[0].transform
+    else: return wp.next(distance)[0].transform
+
 def transform_points(transform, points):
     """Given a 4x4 transformation matrix, transform an array of 3D points.
     Expected point foramt: [[X0,Y0,Z0],..[Xn,Yn,Zn]]."""

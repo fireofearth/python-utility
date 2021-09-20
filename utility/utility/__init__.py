@@ -127,17 +127,17 @@ def shuffle_nested_dict_of_list(dl):
 
 def setget_dict_from_dict(d, k):
     try:
-        return k[d]
+        return d[k]
     except IndexError:
-        k[d] = { }
-        return k[d]
+        d[k] = { }
+        return d[k]
 
 def setget_list_from_dict(d, k):
     try:
-        return k[d]
+        return d[k]
     except IndexError:
-        k[d] = [ ]
-        return k[d]
+        d[k] = [ ]
+        return d[k]
 
 #########################
 # (Functional) operations
@@ -466,6 +466,11 @@ def product(*args, **kwargs):
     """Cartesian product of iterables, returning a list.
     Example: ('ABC', range(2)) -> [('A', 0), ('A', 1), ('B', 0), ('B', 1), ('C', 0), ('C', 1)]"""
     return list(itertools.product(*args, **kwargs))
+
+def permutations(*args, **kwargs):
+    """Return permutations of elements in a list, returning a list.
+    Example: ('ABC', 2) --> [('A', 'B', 'C'), ('A', 'C', 'B'), ..., ('C', 'B', 'A')]"""
+    return list(itertools.permutations(*args, **kwargs))
 
 #################
 # Math operations
