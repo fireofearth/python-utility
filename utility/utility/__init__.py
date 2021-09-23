@@ -108,7 +108,7 @@ def do_on_nested_dict_of_list(f, dl, *args, **kwargs):
         f(dl, *args, **kwargs)
     elif isinstance(dl, dict):
         for v in dl.values():
-            sort_nested_dict_of_list(v, *args, **kwargs)
+            do_on_nested_dict_of_list(f, v, *args, **kwargs)
     else:
         pass
 

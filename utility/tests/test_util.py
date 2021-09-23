@@ -112,3 +112,44 @@ def test_subsequences_2():
     seq =  np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27], dtype=np.int64)
     _slice, size = util.longest_consecutive_increasing_subsequence(seq)
     print(size, _slice, seq[_slice])
+
+def test_do_on_nested_dict_of_list_1():
+    nested_dict = {
+        1: {
+            4: [6, 3, 2, 1, 5, 4],
+            5: 1,
+            6: None
+        },
+        2: [3, 4, 1, 7, 5, 2, 6],
+        3: [5, 7, 1, 3, 6, 2, 4]
+    }
+    util.sort_nested_dict_of_list(nested_dict)
+    actual = nested_dict
+    expected = {
+        1: {
+            4: [1, 2, 3, 4, 5, 6],
+            5: 1,
+            6: None
+        },
+        2: [1, 2, 3, 4, 5, 6, 7],
+        3: [1, 2, 3, 4, 5, 6, 7]
+    }
+    assert actual == expected
+
+def test_do_on_nested_dict_of_list_2():
+    nested_dict = {
+        1: {
+            4: [1, 2, 3, 4, 5, 6],
+            5: 1,
+            6: None
+        },
+        2: [1, 2, 3, 4, 5, 6],
+        3: [1, 2, 3, 4, 5, 6]
+    }
+    util.shuffle_nested_dict_of_list(nested_dict)
+    actual = nested_dict
+    assert actual[2] != [1, 2, 3, 4, 5, 6]
+    assert actual[3] != [1, 2, 3, 4, 5, 6]
+    assert actual[1][4] != [1, 2, 3, 4, 5, 6]
+    assert actual[1][5] == 1
+    assert actual[1][6] is None
