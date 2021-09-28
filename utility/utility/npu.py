@@ -1,6 +1,8 @@
 """Numpy and scipy operations"""
 import numpy as np
 import scipy
+import scipy.optimize
+import scipy.spatial
 
 from . import UtilityException
 from . import pairwise
