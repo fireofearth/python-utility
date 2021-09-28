@@ -484,6 +484,8 @@ def sgn(x):
 # Numpy math operations
 #######################
 
+## DEPRECATED: use utility.npu
+
 def kronecker_add_vectors(a, b):
     """Kronecker addition of two vectors,
     treating a as a row vector and b as a column vector"""
@@ -496,6 +498,7 @@ def kronecker_mul_vectors(a, b):
 
 def decision_to_value(b, values=(1, -1)):
     """Map binary decisions to corresponding values.
+    TODO: DEPRECATED: just use np.where()
 
     Parameters
     ==========
