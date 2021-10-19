@@ -69,7 +69,7 @@ def debug_square(client, l, r,
 
 def location_to_ndarray(l, flip_x=False, flip_y=False):
     """Converts carla.Location to ndarray [x, y, z]"""
-    x_mult, y_mult = util.decision_to_value([flip_x, flip_y])
+    x_mult, y_mult = np.where([flip_x, flip_y], -1, 1)
     return np.array([x_mult*l.x, y_mult*l.y, l.z])
 
 def rotation_to_ndarray(r, flip_x=False, flip_y=False):
@@ -95,7 +95,7 @@ def locations_to_ndarray(ls, flip_x=False, flip_y=False):
 
 def ndarray_to_location(v, flip_x=False, flip_y=False):
     """ndarray of form [x, y, z] to carla.Location."""
-    x_mult, y_mult = util.decision_to_value([flip_x, flip_y])
+    x_mult, y_mult = np.where([flip_x, flip_y], -1, 1)
     return carla.Location(x=x_mult*v[0], y=y_mult*v[1], z=v[2])
 
 def actor_to_location_ndarray(a, flip_x=False, flip_y=False):
@@ -125,7 +125,7 @@ def to_locations_ndarray(l, flip_x=False, flip_y=False):
 def actor_to_velocity_ndarray(a, flip_x=False, flip_y=False):
     """Converts carla.Actor's component-wise velocity to ndarray
     [vel_x, vel_y, vel_z]"""
-    x_mult, y_mult = util.decision_to_value([flip_x, flip_y])
+    x_mult, y_mult = np.where([flip_x, flip_y], -1, 1)
     v = a.get_velocity()
     return np.array([x_mult*v.x, y_mult*v.y, v.z])
 
@@ -165,7 +165,7 @@ def actor_to_Lxyz_Vxyz_Axyz_Rpyr_ndarray(a, flip_x=False, flip_y=False):
     to ndarray [pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, acc_x, acc_y, acc_z,
     length, width, height, pitch, yaw, roll] where pitch, yaw, roll are in
     radians."""
-    x_mult, y_mult = util.decision_to_value([flip_x, flip_y])
+    x_mult, y_mult = np.where([flip_x, flip_y], -1, 1)
     bb = a.bounding_box.extent
     t = a.get_transform()
     v = a.get_velocity()

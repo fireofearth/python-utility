@@ -259,6 +259,12 @@ def pairwise(l):
     next(b, None)
     return list(zip(a, b))
 
+def grouper(iterable, n, fillvalue=None):
+    """Collect data into non-overlapping fixed-length chunks or blocks.
+    Example: ('ABCDEFG', 3, 'x') --> ['ABC' 'DEF' 'Gxx']"""
+    args = [iter(iterable)] * n
+    return list(itertools.zip_longest(*args, fillvalue=fillvalue))
+
 def pairwise_do(f, l):
     """Make a list by applying operation on consecutive pairs in a list.
     Example: [1,2,3] -> [1+2,2+3]
