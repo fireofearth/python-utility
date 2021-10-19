@@ -3,13 +3,13 @@ from . import grouper
 def cube():
     return """
          +--------+
-        /        /|
+        / axis 0 /|
        /  top   / |
       /        /  |
      /        /   |
-    +--------+    |
+    +--------+ax 2|
     |        |side|
-    |        |    +
+    | axis 1 |    +
     | front  |   /
     |        |  /
     |        | /
