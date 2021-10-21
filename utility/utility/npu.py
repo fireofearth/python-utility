@@ -82,6 +82,14 @@ def reflect_radians_about_y_axis(r):
     r = (r + np.pi) % (2*np.pi)
     return r
 
+def warp_radians_neg_pi_to_pi(phases):
+    """Warps radians to (-pi, pi]"""
+    return (phases + np.pi) % (2 * np.pi) - np.pi
+
+def warp_radians_0_to_2pi(phases):
+    """Warps radians to [0, 2pi)"""
+    return phases % (2*np.pi)
+
 def determinant_2d(A):
     """Compute the determinant of a 2D matrix ndarray."""
     a, b, c, d = A[0,0], A[0,1], A[1,0], A[1,1]
