@@ -222,6 +222,8 @@ def vertices_from_bbox(center, theta, lw):
     return vertices_of_bboxes(np.array([center]), np.array([theta]), lw)[0]
 
 def interp_and_sample(points, n, interpolation='quadratic'):
+    """Interpolate a spline over points and sample n equally
+    spaced out points from the spline."""
     distance = np.cumsum(np.sqrt(np.sum( np.diff(points, axis=0)**2, axis=1)))
     distance = np.insert(distance, 0, 0)/distance[-1]
     interpolator =  scipy.interpolate.interp1d(distance, points, kind=interpolation, axis=0)
@@ -358,7 +360,11 @@ def plot_h_polyhedron(ax, A, b, fc='none', ec='none', alpha=0.3):
 
 def obj_matmul(A, B):
     """Non-vectorized multiplication of arrays of object dtype"""
-    if len(B.shape) == 1:
+    if len(A.shape) == 1 and len(B.shape) == 1:
+        C = 0
+        for i in range(A.shape[0]):
+            C += A[i]*B[i]
+    elif len(B.shape) == 1:
         C = np.zeros((A.shape[0]), dtype=object)
         for i in range(A.shape[0]):
             for k in range(A.shape[1]):

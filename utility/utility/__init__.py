@@ -143,6 +143,10 @@ def setget_list_from_dict(d, k):
 # (Functional) operations
 #########################
 
+def identity(x):
+    """Just return the input."""
+    return x
+
 def range_to_list(*args):
     """Creates a range and converts it to a list."""
     return list(range(*args))
