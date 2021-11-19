@@ -1,6 +1,6 @@
 import os
 import json
-from pathlib import Path
+import pathlib
 import math
 import numbers
 import random
@@ -47,15 +47,18 @@ class AttrDict(dict):
 #################
 
 def get_dirname_of(fn):
-    """Get absolute path of the immediate directory the file is in
+    """Get absolute path of the immediate directory the file
+    or directory is in.
+
     Parameters
-    ----------
+    ==========
     fn : str
-        The path i.e. /path/to/image.png
+        The path e.g. '/path/to/image.png'.
+
     Returns
-    -------
+    =======
     str
-        The dirname i.e /path/to
+        The dirname e.g. '/path/to'.
     """
     return os.path.dirname(os.path.abspath(fn))
 
@@ -83,8 +86,31 @@ def load_json(filepath):
     with open(filepath) as f:
         return json.load(f)
 
+def path_to_filename(path, with_suffix=True):
+    """Get filename from path.
+    
+    Parameters
+    ==========
+    path : str
+        Path to retrieve file name from e.g. '/path/to/image.png'.
+    with_suffix : bool
+        Whether to include the suffix of file path in file name.
+
+    Returns
+    =======
+    str
+        The file name of the path e.g. 'image.png'
+        or 'image' if `with_suffix` is false.
+    """
+    p = pathlib.Path(path)
+    if with_suffix:
+        return str(p.name)
+    else:
+        return str(p.with_suffix("").name)
+
 def strip_extension(path):
     """Function to strip file extension
+    DEPRECATED: use 
 
     Parameters
     ----------
@@ -96,7 +122,7 @@ def strip_extension(path):
     path : string
         Path to a file without file extension
     """
-    p = Path(path)
+    p = pathlib.Path(path)
     return str(p.with_suffix(''))
 
 ###########################
@@ -482,13 +508,29 @@ def permutations(*args, **kwargs):
     Example: ('ABC', 2) --> [('A', 'B', 'C'), ('A', 'C', 'B'), ..., ('C', 'B', 'A')]"""
     return list(itertools.permutations(*args, **kwargs))
 
-#################
-# Math operations
-#################
+##########################
+# Non-numy Math operations
+##########################
+
+class Clip(object):
+    def __init__(self, low=-1, high=1):
+        self.__low = low
+        self.__high = high
+        
+    def __call__(self, x):
+        return min(max(self.__low, x), self.__high)
 
 def sgn(x):
     """Get the sign of a number as int. 1.2 -> 1 and -1.2 -> -1"""
     return int(math.copysign(1, x))
+
+def map_01_to_uv(u, v):
+    """Get mapping from [0, 1] to [u, v]"""
+    return lambda x: x*(v - u) + u
+
+def map_uv_to_01(u, v):
+    """Get mapping from [u, v] to [0, 1]"""
+    return lambda x: (x - u)/(v - u)
 
 #######################
 # Numpy math operations

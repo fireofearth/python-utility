@@ -82,13 +82,33 @@ def reflect_radians_about_y_axis(r):
     r = (r + np.pi) % (2*np.pi)
     return r
 
-def warp_radians_neg_pi_to_pi(phases):
-    """Warps radians to (-pi, pi]"""
-    return (phases + np.pi) % (2 * np.pi) - np.pi
+def warp_radians_neg_pi_to_pi(radians):
+    """Warps radians to (-pi, pi]."""
+    return (radians + np.pi) % (2 * np.pi) - np.pi
 
-def warp_radians_0_to_2pi(phases):
+def warp_radians_0_to_2pi(radians):
     """Warps radians to [0, 2pi)"""
-    return phases % (2*np.pi)
+    return radians % (2*np.pi)
+
+def warp_radians_about_center(radians, c):
+    """Warps radians about interval (c - pi, c + pi] with center c.
+    
+    Parameters
+    ==========
+    radians : float or ndarray of float
+        The radians to wrap as 1D ndarray.
+    c : float of ndarray of float
+        Center of interval to wrap radians.
+        If c is a 1D ndarray with the same shape as `radians`,
+        then warping is performed elementwise:
+        f(radians, c) -> array([f(radians[i], c[i]) for i in range(radians.size)])
+    
+    Returns
+    =======
+    float of ndarray of float
+        The radians wrapped.
+    """
+    return (radians - c + np.pi) % (2 * np.pi) + c - np.pi
 
 def determinant_2d(A):
     """Compute the determinant of a 2D matrix ndarray."""
@@ -330,7 +350,7 @@ def vertices_to_halfspace_representation(vertices):
 # Plotting functions
 ####################
 
-def plot_h_polyhedron(ax, A, b, fc='none', ec='none', alpha=0.3):
+def plot_h_polyhedron(ax, A, b, fc='none', ec='none', ls=None, alpha=0.3):
     """Plot a convex polytope in H-representation A x < b.
     Note: [A; b], A x + b < 0 is the format for HalfspaceIntersection
     
@@ -351,7 +371,7 @@ def plot_h_polyhedron(ax, A, b, fc='none', ec='none', alpha=0.3):
     hs = scipy.spatial.HalfspaceIntersection(Ab, res.x)
     ch = scipy.spatial.ConvexHull(hs.intersections)
     x, y = zip(*hs.intersections[ch.vertices])
-    ax.fill(x, y, fc=fc, ec=ec, alpha=alpha)
+    ax.fill(x, y, fc=fc, ec=ec, ls=ls, alpha=alpha)
 
 #####################################################################
 # Sequential reimplementation of some Numpy functions for object type
