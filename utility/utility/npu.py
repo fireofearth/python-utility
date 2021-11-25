@@ -196,6 +196,32 @@ def distances_from_line_2d(points, x_start, y_start, x_end, y_end):
     else:
         raise UtilityException(f"Points of dimension {points.ndim} are not 1 or 2")
 
+def order_polytope_vertices(vertices):
+    """Reorder the polytope vertices so that they are clockwise order around the polytope.
+    Used by methods such as `vertices_to_halfspace_representation()` where vertex order matters.
+
+    Returns
+    =======
+    np.ndarray
+        The vertices of polytope of shape (N,2).
+
+    Returns
+    =======
+    np.ndarray
+        The vertices reordered, of shape (N,2).
+    """
+    mean = np.mean(vertices, axis=0)
+    direction = vertices - mean
+    dot = np.dot(direction, direction[0])
+    norm = np.linalg.norm(direction, axis=-1) * np.linalg.norm(direction[0])
+    dot_norm = np.clip(dot / norm, -0.99999, 0.99999)
+    cos = np.arccos(dot_norm)
+    sgn = np.sign(np.cross(direction, direction[0]))
+    sgn[sgn == 0] = 1
+    cos = sgn*cos
+    indices = np.argsort(cos)
+    return vertices[indices]
+
 def vertices_of_bboxes(centers, theta, lw):
     """Get the vertices of N rectanglar bounding boxes given the centers of the boxes,
     the thetas the boxes they are pointing at, and the length and width of the boxes,
@@ -361,6 +387,8 @@ def plot_h_polyhedron(ax, A, b, fc='none', ec='none', ls=None, alpha=0.3):
     b : ndarray
     fc : str
     ec : str
+    ls : float
+        Line size.
     alpha : float
         Transparency.
     """

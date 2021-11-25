@@ -97,7 +97,6 @@ def carlacopy(x):
 # Object ndarray manipulation
 #############################
 
-
 def location_to_ndarray(l, flip_x=False, flip_y=False):
     """Converts carla.Location to ndarray [x, y, z]"""
     x_mult, y_mult = np.where([flip_x, flip_y], -1, 1)
