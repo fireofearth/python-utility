@@ -78,6 +78,45 @@ def debug_square(
     world.debug.draw_box(box, rotation, thickness=0.5, color=c, life_time=t)
 
 
+def debug_polytope_on_xy_plane(
+    c,
+    vertices,
+    z,
+    life_time=1.0,
+    thickness=0.1,
+    color=carla.Color(r=255, g=0, b=0, a=100),
+):
+    """Draw polytope on xy plane at a z-level.
+
+    Parameters
+    ==========
+    c : carla.Client or carla.World
+        Client or world used to draw.
+    vertices : ndarray
+        2D vertices of polytope of shape (N,2).
+    z : float
+        height or z level of xy plane.
+    life_time : float
+        Life time of polytope (optional).
+    thickness : float
+        Thickness of line in meters.
+    color : carla.Color
+        Color of the polytope (optional).
+    """
+    if isinstance(c, carla.Client):
+        world = c.get_world()
+    else:
+        world = c
+    indices = vertices.shape[0]
+    vertices = np.vstack((vertices, vertices[0][None]))
+    for idx in range(indices):
+        world.debug.draw_line(
+            carla.Location(vertices[idx, 0], vertices[idx, 1], z),
+            carla.Location(vertices[idx + 1, 0], vertices[idx + 1, 1], z),
+            thickness=thickness, color=color, life_time=life_time
+        )
+
+
 def carlacopy(x):
     """Copies objects defined in CARLA.
     Note: the function exists because copy.deepcopy() fails."""
@@ -91,6 +130,13 @@ def carlacopy(x):
         )
     else:
         raise NotImplementedError(f"Don't know how to copy carla.{type(x).__name__}")
+
+
+def transform_to_str(t):
+    l = t.location
+    r = t.rotation
+    f = lambda s : round(s, 2)
+    return f"(x={f(l.x)}, y={f(l.y)}, z={f(l.z)}, pitch={f(r.pitch)}, yaw={f(r.yaw)}, roll={f(r.roll)})"
 
 
 #############################
