@@ -196,7 +196,7 @@ def distances_from_line_2d(points, x_start, y_start, x_end, y_end):
     else:
         raise UtilityException(f"Points of dimension {points.ndim} are not 1 or 2")
 
-def extend_in_direction_by_points(p1, p2, distance=1., n=1):
+def extend_by_points(p1, p2, distance=1., n=1):
     """Extend points from p1 in the direction of p2.
     The points are the same dimension, in any dimension > 1.
     
