@@ -79,7 +79,7 @@ def reflect_radians_about_x_axis(r):
     return r
 
 def reflect_radians_about_y_axis(r):
-    r = (r + np.pi) % (2*np.pi)
+    r = (np.pi - r) % (2*np.pi)
     return r
 
 def warp_radians_neg_pi_to_pi(radians):
@@ -196,6 +196,32 @@ def distances_from_line_2d(points, x_start, y_start, x_end, y_end):
     else:
         raise UtilityException(f"Points of dimension {points.ndim} are not 1 or 2")
 
+def extend_in_direction_by_points(p1, p2, distance=1., n=1):
+    """Extend points from p1 in the direction of p2.
+    The points are the same dimension, in any dimension > 1.
+    
+    Parameters
+    ==========
+    p1 : np.array
+        Origin point to extend with more points.
+    p2 : np.array
+        Point giving the direction from p1 we want to extend with more points.
+    distance : float
+        The distance between each extended point.
+    n : int
+        Number of points to extend from p1.
+    distance
+    n : int
+        Number of points
+    
+    Returns
+    =======
+    np.array
+        The extending points.
+    """
+    p = (p2 - p1) / np.linalg.norm(p2 - p1)
+    return p1 + kronecker_mul_vectors(p, np.linspace(distance, n*distance, n))
+
 def order_polytope_vertices(vertices):
     """Reorder the polytope vertices so that they are clockwise order around the polytope.
     Used by methods such as `vertices_to_halfspace_representation()` where vertex order matters.
@@ -235,7 +261,7 @@ def vertices_of_bboxes(centers, theta, lw):
         The direction of the boxes in radians. Theta can be a number specifying the
         direction of all boxes, or a ndarray that specifies the direction for each box
         with shape (N,).
-    lw : np.ndarray
+    lw : list or np.ndarray
         The length and width of the box. It can have shape (2,) and applied to all boxes,
         or have shape (N, 2) to specify the dimensions of each box separately.
 
@@ -244,6 +270,8 @@ def vertices_of_bboxes(centers, theta, lw):
     np.ndarray
         The vertices of the boxes of shape (N,4,2).
     """
+    if isinstance(lw, (list, tuple)):
+        lw = np.array(lw)
     lws = np.repeat(lw[None], centers.shape[0], axis=0) if lw.ndim == 1 else lw
     thetas = np.full(centers.shape[0], theta) if np.ndim(theta) == 0 else theta
     C = np.cos(thetas)
@@ -407,7 +435,10 @@ def plot_h_polyhedron(ax, A, b, fc='none', ec='none', ls=None, alpha=0.3):
 #####################################################################
 
 def obj_matmul(A, B):
-    """Non-vectorized multiplication of arrays of object dtype"""
+    """Non-vectorized multiplication of arrays of object dtype.
+    
+    Sequential reimplementation of some Numpy functions for object type.
+    Used when types cannot be vectorized."""
     if len(A.shape) == 1 and len(B.shape) == 1:
         C = 0
         for i in range(A.shape[0]):
@@ -426,6 +457,10 @@ def obj_matmul(A, B):
     return C
 
 def obj_vectorize(f, A):
+    """Non-vectorized emulation of tensor vectorization.
+
+    Sequential reimplementation of some Numpy functions for object type.
+    Used when types cannot be vectorized."""
     if A.ndim == 0:
         return f(A)
     elif A.ndim == 1:
