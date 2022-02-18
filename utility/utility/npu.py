@@ -196,16 +196,19 @@ def distances_from_line_2d(points, x_start, y_start, x_end, y_end):
     else:
         raise UtilityException(f"Points of dimension {points.ndim} are not 1 or 2")
 
-def extend_by_points(p1, p2, distance=1., n=1):
-    """Extend points from p1 in the direction of p2.
+def extend_by_points(p1, direction=None, p2=None, distance=1., n=1):
+    """Extend points from p1 in the direction vector, or towards of p2.
     The points are the same dimension, in any dimension > 1.
     
     Parameters
     ==========
     p1 : np.array
         Origin point to extend with more points.
+    direction : np.array
+        Unnormalized direction vector.
     p2 : np.array
         Point giving the direction from p1 we want to extend with more points.
+        At least one of direction or p2 should be given.
     distance : float
         The distance between each extended point.
     n : int
@@ -219,8 +222,11 @@ def extend_by_points(p1, p2, distance=1., n=1):
     np.array
         The extending points.
     """
-    p = (p2 - p1) / np.linalg.norm(p2 - p1)
-    return p1 + kronecker_mul_vectors(p, np.linspace(distance, n*distance, n))
+    if direction is None:
+        direction = (p2 - p1) / np.linalg.norm(p2 - p1)
+    else:
+        direction = direction / np.linalg.norm(direction)
+    return p1 + kronecker_mul_vectors(direction, np.linspace(distance, n*distance, n))
 
 def order_polytope_vertices(vertices):
     """Reorder the polytope vertices so that they are clockwise order around the polytope.
