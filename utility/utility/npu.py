@@ -7,6 +7,12 @@ import scipy.spatial
 from . import UtilityException
 from . import pairwise
 
+def unit_normal_2d(p1, p2):
+    """Compute unit normal vector counter-clockwise of the
+    direction from p1 to p2 in 2D"""
+    p = p2 - p1
+    return np.array([-p[1], p[0]])
+
 def kronecker_add_vectors(a, b):
     """Kronecker addition of two vectors,
     treating a as a row vector and b as a column vector"""
