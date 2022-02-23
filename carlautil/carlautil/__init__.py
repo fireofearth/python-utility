@@ -416,6 +416,79 @@ def get_junctions_from_topology_graph(topology):
     return list({j.id: j for j in junctions}.values())
 
 
+def to_xy_point(wp, flip_x=False, flip_y=False):
+    """Convert waypoint to a 2D point.
+
+    Parameters
+    ==========
+    wp : carla.Waypoint
+
+    Returns
+    =======
+    list of float
+    """
+    x, y, _ = to_location_ndarray(wp, flip_x=flip_x, flip_y=flip_y)
+    return [x, y]
+
+
+def collect_points_along_path(
+    start_wp, choices, max_distance, precision=1.0, flip_x=False, flip_y=False
+):
+    """Collects points along path on a CARLA map, beginning with provided waypoint.
+    
+    Parameters
+    ==========
+    start_wp : carla.Waypoint
+        Waypoint designating the start of the path.
+    choices : list of int
+        Indices of turns at each junction along the path from start_wp onwards.
+        If there are more junctions than indices contained in choices, then 
+        choose default turn. 
+    max_distance : float
+        Maximum distance of path from start_wp we want to sample from.
+    precision : float
+        Distance between consecutive waypoints on the path to sample. 
+    
+    Returns
+    =======
+    np.array of float
+        Sampled points along path starting from waypoint start_wp
+        of shape (N, 2).
+    list of float
+        Accumulated distance from the first point to the last on
+        the path starting from distance 0. of the initial point.
+        List has length N.
+    float
+        Cumulative distance from first to last point, equal
+        to the accumulated distance of the last point.
+    """
+    _to_point = functools.partial(to_xy_point, flip_x=flip_x, flip_y=flip_y)
+    wp = start_wp
+    wps = [wp]
+    points = [_to_point(wp)]
+    distances = [0.]
+    cum_distance = 0.
+    iidx = 0
+    while cum_distance < max_distance:
+        next_wps = wp.next(precision)
+        if len(next_wps) > 1:
+            try:
+                wp = next_wps[choices[iidx]]
+            except IndexError:
+                wp = next_wps[0]
+            iidx += 1
+        else:
+            wp = next_wps[0]
+        wps.append(wp)
+        points.append(_to_point(wp))
+        x1, y1 = points[-2]
+        x2, y2 = points[-1]
+        cum_distance += np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+        distances.append(cum_distance)
+    points = np.array(points)
+    return wps, points, distances
+
+
 def cylindrical_to_camera_watcher_transform(r, theta, z, location=carla.Location()):
     """Get the transformation to define camera position and orientation looking directly
     at location given some cylindrical coordinates relative to given location.
@@ -466,7 +539,6 @@ def spherical_to_camera_watcher_transform(r, theta, phi, location=carla.Location
     carla.Transform
         Transformation to define camera position and orientation looking directly at car.
     """
-
     location = (
         carla.Location(
             r * math.sin(phi) * math.cos(theta),
@@ -483,7 +555,8 @@ def spherical_to_camera_watcher_transform(r, theta, phi, location=carla.Location
 
 
 def strafe_transform(transform, right=0, above=0):
-    """Strafe transform (right,left) and (above,below) while maintaining orientation."""
+    """Strafe transform (right,left) and (above,below)
+    while maintaining orientation."""
     if above != 0 and right != 0:
         transform = carlacopy(transform)
     if above != 0:
