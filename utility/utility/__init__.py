@@ -42,6 +42,24 @@ class AttrDict(dict):
         super(AttrDict, self).__init__(*args, **kwargs)
         self.__dict__ = self
 
+class TimeDelta(object):
+    def __init__(self, delta_time):
+        """Convert time difference in seconds to days, hours, minutes, seconds.
+        
+        Parameters
+        ==========
+        delta_time : float
+            Time difference in seconds.
+        """
+        self.fractional, seconds = math.modf(delta_time)
+        seconds = int(seconds)
+        minutes, self.seconds = divmod(seconds, 60)
+        hours, self.minutes = divmod(minutes, 60)
+        self.days, self.hours = divmod(hours, 24)
+    
+    def __repr__(self):
+        return f"{self.days}-{self.hours:02}:{self.minutes:02}:{self.seconds + self.fractional:02}"
+
 #################
 # File operations
 #################
@@ -196,8 +214,9 @@ def filter_to_list(f, l):
 
 def compress_to_list(l, bl):
     """Filter list using a list of selectors, returning a list.
-    Example: ([1,2,3,4,5], [True, False, False, True, False]) -> [1,4]"""
-    # TODO: DEPRECATED
+    Example: ([1,2,3,4,5], [True, False, False, True, False]) -> [1,4]
+    TODO: DEPRECATED
+    """
     return list(itertools.compress(l, bl))
 
 def filter_next(f, l, n=1, default=None):
@@ -507,6 +526,28 @@ def permutations(*args, **kwargs):
     """Return permutations of elements in a list, returning a list.
     Example: ('ABC', 2) --> [('A', 'B', 'C'), ('A', 'C', 'B'), ..., ('C', 'B', 'A')]"""
     return list(itertools.permutations(*args, **kwargs))
+
+# more_itertools.* functions modified to return lists.
+
+def divide(n, iterable):
+    """Divide the elements from *iterable* into *n* parts as lists, maintaining order.
+    Taken from more-itertools with minor modification."""
+    if n < 1:
+        raise ValueError('n must be at least 1')
+    try:
+        iterable[:0]
+    except TypeError:
+        seq = tuple(iterable)
+    else:
+        seq = iterable
+    q, r = divmod(len(seq), n)
+    ret = []
+    stop = 0
+    for i in range(1, n + 1):
+        start = stop
+        stop += q + 1 if i <= r else q
+        ret.append(list(seq[start:stop]))
+    return ret
 
 ##########################
 # Non-numy Math operations

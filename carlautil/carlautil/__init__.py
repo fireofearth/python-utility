@@ -490,7 +490,7 @@ def cylindrical_to_camera_watcher_transform(r, theta, z, location=carla.Location
     return carla.Transform(location, rotation)
 
 
-def spherical_to_camera_watcher_transform(r, theta, phi, location=carla.Location()):
+def spherical_to_camera_watcher_transform(r, theta, phi, pin=carla.Location()):
     """Get the transformation to define camera position and orientation looking directly
     at location given some spherical coordinates relative to given location.
 
@@ -504,27 +504,46 @@ def spherical_to_camera_watcher_transform(r, theta, phi, location=carla.Location
     phi : float
         The polar angle in radians (from +z-axis) from location in meters to define spherical coordinates
         relative to location.
-    location : Carla.Location
-        The location the camera should look at. By default, the location is origin.
+    pin : carla.Location or carla.Transform
+        The place the camera should look at. By default, use location origin.
 
     Return
     ======
     carla.Transform
         Transformation to define camera position and orientation looking directly at car.
     """
-
-    location = (
-        carla.Location(
-            r * math.sin(phi) * math.cos(theta),
-            r * math.sin(phi) * math.sin(theta),
-            r * math.cos(phi),
+    if isinstance(pin, carla.Location):
+        location = (
+            carla.Location(
+                r * math.sin(phi) * math.cos(theta),
+                r * math.sin(phi) * math.sin(theta),
+                r * math.cos(phi),
+            )
+            + pin
         )
-        + location
-    )
-    rotation = carla.Rotation(
-        yaw=math.degrees(theta + math.pi),
-        pitch=-math.degrees(math.atan(1/math.tan(phi))),
-    )
+        rotation = carla.Rotation(
+            yaw=math.degrees(theta + math.pi),
+            pitch=-math.degrees(math.atan(1/math.tan(phi))),
+        )
+    elif isinstance(pin, carla.Transform):
+        car_yaw = pin.rotation.yaw
+        location = (
+            carla.Location(
+                r * math.sin(phi) * math.cos(theta + math.radians(car_yaw)),
+                r * math.sin(phi) * math.sin(theta + math.radians(car_yaw)),
+                r * math.cos(phi),
+            )
+            + pin.location
+        )
+        rotation = carla.Rotation(
+            yaw=math.degrees(theta + math.pi) + car_yaw,
+            pitch=-math.degrees(math.atan(1/math.tan(phi))),
+        )
+    else:
+        raise TypeError(
+            "pin should be one of carla.Location "
+            f"or carla.Transform but instead it is {type(pin).__name__}"
+        )
     return carla.Transform(location, rotation)
 
 
