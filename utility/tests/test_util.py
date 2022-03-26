@@ -109,9 +109,74 @@ def test_subsequences(seq, expected_subseq, expected_slice, expected_size):
     assert size == expected_size
 
 def test_subsequences_2():
+    # TODO: what is this doing here?
     seq =  np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27], dtype=np.int64)
     _slice, size = util.longest_consecutive_increasing_subsequence(seq)
     print(size, _slice, seq[_slice])
+
+def test_flatten_nested_list_1():
+    arbitrary_nested_list = [
+        [],
+        ["a"],
+        [
+            [1, "b", 2],
+            [],
+            [3],
+        ],
+        "c",
+        4,
+        [
+            [
+                [5]
+            ]
+        ],
+        [[[[]]]],
+        [
+            6,
+            [7, 8, "d"]
+        ],
+        9
+    ]
+    expected = ["a",1,"b",2,3,"c",4,5,6,7,8,"d",9]
+    actual = util.flatten_nested_list(arbitrary_nested_list)
+    assert actual == expected
+    expected = [1,2,3,4,5,6,7,8,9]
+    actual = util.flatten_nested_list(arbitrary_nested_list, include=(int))
+    assert actual == expected
+    actual = util.flatten_nested_list(arbitrary_nested_list, include=int)
+    assert actual == expected
+    expected = ["a", "b", "c", "d"]
+    actual = util.flatten_nested_list(arbitrary_nested_list, exclude=(int))
+    assert actual == expected
+
+def test_select_from_nested_list_at_levelindex_1():
+    arb = [ # 0
+        [ # 1
+            [ # 2
+                [1, 2]
+            ]
+        ],
+        [[[[]]]],
+        [ # 1
+            [ # 2
+                [3, 4, 5, 6],
+                [7, 8, 9, 10, 11]
+            ]
+        ],
+        [],
+        [ # 1
+            []
+        ],
+    ]
+    expected = [2, 4, 8]
+    actual = util.select_from_nested_list_at_levelindex(arb, 3, 1)
+    assert actual == expected
+    expected = [5, 9]
+    actual = util.select_from_nested_list_at_levelindex(arb, 3, 2)
+    assert actual == expected
+    expected = [11]
+    actual = util.select_from_nested_list_at_levelindex(arb, 3, 4)
+    assert actual == expected
 
 def test_do_on_nested_dict_of_list_1():
     nested_dict = {

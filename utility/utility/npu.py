@@ -416,7 +416,7 @@ def vertices_to_halfspace_representation(vertices):
 # Plotting functions
 ####################
 
-def plot_h_polyhedron(ax, A, b, fc='none', ec='none', ls=None, alpha=0.3):
+def plot_h_polyhedron(ax, A, b, fc='none', ec='none', alpha=0.3, **kwargs):
     """Plot a convex polytope in H-representation A x < b.
     Note: [A; b], A x + b < 0 is the format for HalfspaceIntersection
     
@@ -439,7 +439,7 @@ def plot_h_polyhedron(ax, A, b, fc='none', ec='none', ls=None, alpha=0.3):
     hs = scipy.spatial.HalfspaceIntersection(Ab, res.x)
     ch = scipy.spatial.ConvexHull(hs.intersections)
     x, y = zip(*hs.intersections[ch.vertices])
-    ax.fill(x, y, fc=fc, ec=ec, ls=ls, alpha=alpha)
+    ax.fill(x, y, fc=fc, ec=ec, alpha=alpha, **kwargs)
 
 #####################################################################
 # Sequential reimplementation of some Numpy functions for object type

@@ -265,6 +265,70 @@ def count(f, l):
     """
     return len(filter_to_list(f, l))
 
+def flatten_nested_list(arb, include=(), exclude=()):
+    """Place all non-list values in a flattened list.
+    Values are placed in left-to-right DFS order.
+    
+    Parameters
+    ==========
+    arb : list
+        Arbitrarily nested list.
+    include : tuple
+        Tuple of types to include in flattened list.
+        Takes precedence over exclude.
+    exclude : tuple
+        Tuple of types to exclude in flattened list.
+    """
+    out = []
+    if include:
+        def f(v):
+            if isinstance(v, include):
+                out.append(v)
+    elif exclude:
+        def f(v):
+            if not isinstance(v, exclude):
+                out.append(v)
+    else:
+        def f(v):
+            out.append(v)
+    def _flatten(arb):
+        for v in arb:
+            if isinstance(v, list):
+                _flatten(v)
+            else:
+                f(v)
+    _flatten(arb)
+    return out
+
+def select_from_nested_list_at_levelindex(arb, level, index):
+    """Select items on index of level in arbitrary nested index.
+    Values are placed in left-to-right order.
+
+    Parameters
+    ==========
+    arb : list
+        Arbitrarily nested list.
+    level : int
+        Level of index to gather items.
+    index : int
+        Index of list at level of nested list to select items.
+    """
+    if level == 0:
+        return arb
+    out = []
+    def get_to_level(arb, _level):
+        try:
+            if 0 < _level:
+                for v in arb:
+                    if isinstance(v, list):
+                        get_to_level(v, _level - 1)
+            else:
+                out.append(arb[index])
+        except (TypeError, IndexError):
+            pass
+    get_to_level(arb, level)
+    return out
+
 def merge_list_of_list(ll):
     """Concatenate iterable of iterables into one list."""
     return list(itertools.chain.from_iterable(ll))
