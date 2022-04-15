@@ -22,7 +22,13 @@ def make_client(host="127.0.0.1", port=2000):
     return carla.Client(host, port)
 
 
-def debug_point(client, l, t=1.0, c=carla.Color(r=255, g=0, b=0, a=100)):
+def debug_point(
+    client,
+    l,
+    t=1.0,
+    c=carla.Color(r=255, g=0, b=0, a=100),
+    label="o"
+):
     """Draw a point in the simulator.
 
     Parameters
@@ -35,6 +41,8 @@ def debug_point(client, l, t=1.0, c=carla.Color(r=255, g=0, b=0, a=100)):
         Life time of point.
     c : carla.Color, optional
         Color of the point.
+    label : str
+        Alternative string to label the point.
     """
     if isinstance(l, carla.Transform):
         l = l.location
@@ -42,7 +50,7 @@ def debug_point(client, l, t=1.0, c=carla.Color(r=255, g=0, b=0, a=100)):
         world = client.get_world()
     else:
         world = client
-    world.debug.draw_string(l, "o", color=c, life_time=t)
+    world.debug.draw_string(l, label, color=c, life_time=t)
 
 
 def debug_square(
