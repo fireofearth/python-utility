@@ -3,6 +3,7 @@ import numpy as np
 import scipy
 import scipy.optimize
 import scipy.spatial
+import scipy.stats
 
 from . import UtilityException
 from . import pairwise
@@ -167,6 +168,50 @@ def cumulative_points_distances(X):
     Calls `consecutive_points_distances()`."""
     return np.cumsum(consecutive_points_distances(X))
 
+def kernel_1d_gaussian(N, d, *params):
+    """1D Kernel for Gaussian blur.
+
+    Parameters
+    ==========
+    N : int
+        Specifies the length of the filter.
+    d : float
+        The extent to sample points.
+
+    Returns
+    =======
+    ndarray
+        The filter discretizing the Gaussian blur PDF over [-d, d] of shape (2*N + 1).
+    """
+    x = np.linspace(-d, d, 2*N + 1)
+    z = scipy.stats.norm.pdf(x)
+    return z / np.sum(z)
+
+def apply_kernel_1d(x, kernel, *params):
+    """Apply a convolution on input x with a 1D kernel.
+
+    Parameters
+    ==========
+    x : ndarray
+        The input to apply convolution to.
+    kernel : function
+        The function to compute kernel.
+    params : tuple
+        The parameters to pass to the kernel function.
+
+    Returns
+    =======
+    ndarray
+        x with with same shape as x.
+    ndarray
+        The convolution used to apply convolution.
+    """
+    z = kernel(*params)
+    y = np.convolve(x, z, mode='full')
+    l = len(z)
+    N = (l - 1 if l % 2 == 1 else l) // 2
+    return y[N:-N], z
+
 def distances_from_line_2d(points, x_start, y_start, x_end, y_end):
     """Get the distances from each point to a line spanned by line segment from
     (x_start, y_start) to (x_end, y_end). Works for horizontal and vertical lines.
@@ -307,12 +352,55 @@ def vertices_of_bboxes(centers, theta, lw):
 def vertices_from_bbox(center, theta, lw):
     return vertices_of_bboxes(np.array([center]), np.array([theta]), lw)[0]
 
+def interp_spline(points, normalize_interp=True, tol=1e-08):
+    """Interpolate a spline to the points.
+    Removes duplicate points and points close together in Euclidean space.
+
+    Parameters
+    ==========
+    points : ndarray
+        Points to interpolate of shape (N, D).
+    normalize_interp : bool
+        Normalize parameterization to [0, 1].
+    tol : float
+        Remove consecutive points within tol distance close.
+    
+    Returns
+    =======
+    scipy.interpolate.CubicSpline
+        A cubic spline.
+    ndarray
+        The cumulative distances used to parameterize the cubic spline.
+    """
+    distances = np.sqrt(np.sum( np.diff(points, axis=0)**2, axis=1))
+    mask = ~np.isclose(distances, 0., atol=tol)
+    mask = np.insert(mask, -1, True)
+    points = points[mask]
+    distances = np.cumsum(np.sqrt(np.sum( np.diff(points, axis=0)**2, axis=1)))
+    distances = np.insert(distances, 0, 0)
+    if normalize_interp:
+        distances = distances / distances[-1]
+    return scipy.interpolate.CubicSpline(distances, points, axis=0), points, distances
+
 def interp_and_sample(points, n, interpolation='quadratic'):
     """Interpolate a spline over points and sample n equally
-    spaced out points from the spline."""
+    spaced out points from the spline.
+    
+    Parameters
+    ==========
+    points : ndarray
+        Points to interpolate of shape (N, 2).
+    n : int
+        Number of evenly spaced points to sample.
+    
+    Returns
+    =======
+    ndarray
+        Sampled points of shape (n, 2).
+    """
     distance = np.cumsum(np.sqrt(np.sum( np.diff(points, axis=0)**2, axis=1)))
     distance = np.insert(distance, 0, 0)/distance[-1]
-    interpolator =  scipy.interpolate.interp1d(distance, points, kind=interpolation, axis=0)
+    interpolator = scipy.interpolate.interp1d(distance, points, kind=interpolation, axis=0)
     return interpolator(np.linspace(0, 1, n))
 
 def place_rectangles_on_intep_curve(points, n, lws, thetas=None, interpolation='quadratic'):

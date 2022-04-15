@@ -12,6 +12,8 @@ import functools
 import scipy
 import numpy as np
 
+_marker = object()
+
 class UtilityException(Exception):
     pass
 
@@ -38,9 +40,18 @@ def is_iterable(x):
 ######################
 
 class AttrDict(dict):
+    """
+
+    Note
+    ====
+    Do not use copy.copy() or copy.deepcopy() on objects of this class.
+    """
     def __init__(self, *args, **kwargs):
         super(AttrDict, self).__init__(*args, **kwargs)
         self.__dict__ = self
+    
+    def copy(self):
+        return AttrDict(**self)
 
 #################
 # File operations
@@ -373,6 +384,11 @@ def unzip(ll):
     """
     return list(zip(*ll))
 
+def deduplicate(l):
+    """Remove duplicates from list, keeping the list order."""
+    seen = {}
+    return [seen.setdefault(x, x) for x in l if x not in seen]
+
 def longest_subsequence(l, cond=None):
     """Get the longest subsequence of the list composed of entries
     where cond is true. For example:
@@ -544,6 +560,25 @@ def inner_keys_from_nested_dict(d, layers=2):
         ll.append(l)
     return ll
 
+def select(l, i):
+    """Select from iterable using an index of a list of indices,
+    returning a list with entries in the same order as their
+    corresponding indices. Examples:
+
+    """
+    if is_iterable(i):
+        indices = i
+        try:
+            return [l[i] for i in indices]
+        except TypeError:
+            mask = indices_to_selection_mask(indices, max(indices)+1)
+            return compress(l, mask)
+    else:
+        try:
+            return l[i]
+        except TypeError:
+            return next(itertools.islice(l, i, None))
+
 # itertools.* functions should output to list
 # Replacements of the *_to_list() functions
 
@@ -571,6 +606,79 @@ def permutations(*args, **kwargs):
     """Return permutations of elements in a list, returning a list.
     Example: ('ABC', 2) --> [('A', 'B', 'C'), ('A', 'C', 'B'), ..., ('C', 'B', 'A')]"""
     return list(itertools.permutations(*args, **kwargs))
+
+#################################
+# more-itertools based operations
+#################################
+
+def first(iterable, default=_marker):
+    """Return the first item of *iterable*, or *default* if *iterable* is
+    empty.
+
+        >>> first([0, 1, 2, 3])
+        0
+        >>> first([], 'some default')
+        'some default'
+
+    If *default* is not provided and there are no items in the iterable,
+    raise ``ValueError``.
+    """
+    try:
+        return next(iter(iterable))
+    except StopIteration as e:
+        if default is _marker:
+            raise ValueError(
+                'first() was called on an empty iterable, and no '
+                'default value was provided.'
+            ) from e
+        return default
+
+def second(iterable, default=_marker):
+    """Return the second item of *iterable*, or *default* if *iterable* is
+    empty.
+
+        >>> second([0, 1, 2, 3])
+        1
+        >>> second([], 'some default')
+        'some default'
+
+    If *default* is not provided and there are no second item in the iterable,
+    raise ``ValueError``.
+    """
+    try:
+        it = iter(iterable)
+        next(it)
+        return next(it)
+    except StopIteration as e:
+        if default is _marker:
+            raise ValueError(
+                'second() was called on an empty iterable, and no '
+                'default value was provided.'
+            ) from e
+        return default
+
+def divide(n, iterable):
+    """Divide the elements from *iterable* into *n* parts, maintaining order.
+    Taken from more-itertools with minor modification."""
+    if n < 1:
+        raise ValueError('n must be at least 1')
+    try:
+        iterable[:0]
+    except TypeError:
+        seq = tuple(iterable)
+    else:
+        seq = iterable
+
+    q, r = divmod(len(seq), n)
+
+    ret = []
+    stop = 0
+    for i in range(1, n + 1):
+        start = stop
+        stop += q + 1 if i <= r else q
+        ret.append(list(seq[start:stop]))
+
+    return ret
 
 ##########################
 # Non-numy Math operations
@@ -930,29 +1038,6 @@ def obj_vectorize(f, A):
         return np.array([f(a) for a in A])
     else:
         return np.stack([obj_vectorize(f, a) for a in A])
-
-#####################
-# Compound Operations
-#####################
-
-def select(l, i):
-    """Select from iterable using an index of a list of indices,
-    returning a list with entries in the same order as their
-    corresponding indices. Examples:
-
-    """
-    if is_iterable(i):
-        indices = i
-        try:
-            return [l[i] for i in indices]
-        except TypeError:
-            mask = indices_to_selection_mask(indices, max(indices)+1)
-            return compress(l, mask)
-    else:
-        try:
-            return l[i]
-        except TypeError:
-            return next(itertools.islice(l, i, None))
 
 ####################
 # Dataset operations
