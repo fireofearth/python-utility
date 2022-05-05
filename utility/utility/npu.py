@@ -1,4 +1,4 @@
-"""Numpy and scipy operations"""
+"""Numpy array operations"""
 import numpy as np
 import scipy
 import scipy.optimize

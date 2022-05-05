@@ -1,3 +1,4 @@
+"""Matplotlib plotting operations"""
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
