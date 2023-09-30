@@ -500,34 +500,64 @@ def vertices_to_halfspace_representation(vertices):
     A = np.stack(A); b = np.array(b)
     return A, b
 
+def chebyshev_center(A, b):
+    """Compute the Chebeshev center contained in a
+    polytope formed by H-representaiont A x < b.
+
+    Parameters
+    ==========
+    A : ndarray
+    b : ndarray
+
+    Returns
+    =======
+    ndarray
+        The Chebeshev center
+    float
+        The radius of the ball contained in polytope
+    """
+    A_rownorm = np.linalg.norm(A, axis=1)
+    A_center = np.hstack((A, A_rownorm[None].T))
+    res = scipy.optimize.linprog([0, 0, -1], A_ub=A_center, b_ub=b, bounds=(None, None))
+    return res.x[:-1], res.x[-1]
+
+def halfspaces_to_intersection_and_convex_hull(A, b):
+    """Compute the scipy halfspace intersection and convex hull
+    representations of a polytope formed by H-representaiont A x < b.
+
+    Parameters
+    ==========
+    A : ndarray
+    b : ndarray
+
+    Returns
+    =======
+    scipy.spatial.HalfspaceIntersection
+    scipy.spatial.ConvexHull
+    """
+    pt, _ = chebyshev_center(A, b)
+    Ab = Ab = np.hstack((A, -b[None].T))
+    hs = scipy.spatial.HalfspaceIntersection(Ab, pt)
+    ch = scipy.spatial.ConvexHull(hs.intersections)
+    return hs, ch
+
 ####################
 # Plotting functions
 ####################
 
-def plot_h_polyhedron(ax, A, b, fc='none', ec='none', alpha=0.3, **kwargs):
+def plot_h_polyhedron(ax, A, b, **kwargs):
     """Plot a convex polytope in H-representation A x < b.
-    Note: [A; b], A x + b < 0 is the format for HalfspaceIntersection
     
     Parameters
     ==========
     ax : matplotlib.axes.Axes
     A : ndarray
     b : ndarray
-    fc : str
-    ec : str
-    ls : float
-        Line size.
-    alpha : float
-        Transparency.
+    **kwargs: passed to ax.fill()
     """
-    Ab = np.concatenate((A, -b[...,None],), axis=-1)
-    res = scipy.optimize.linprog([0, 0],
-            A_ub=Ab[:,:2], b_ub=-Ab[:,2],
-            bounds=(None, None))
-    hs = scipy.spatial.HalfspaceIntersection(Ab, res.x)
-    ch = scipy.spatial.ConvexHull(hs.intersections)
-    x, y = zip(*hs.intersections[ch.vertices])
-    ax.fill(x, y, fc=fc, ec=ec, alpha=alpha, **kwargs)
+    hs, ch = halfspaces_to_intersection_and_convex_hull(A, b)
+    pts = hs.intersections[ch.vertices]
+    ax.fill(*pts.T, **kwargs)
 
 #####################################################################
 # Sequential reimplementation of some Numpy functions for object type
